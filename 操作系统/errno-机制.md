@@ -402,5 +402,28 @@ extern int __attribute__((weak)) global_var;
     __attribute__ ((alias ("__pthread_key_create")))
     __attribute_copy__ ("__pthread_key_create");
 
-    为汇编服务, 为 __pthread_key_create 构建  __GI___pthread_key_create 函数别名.
+    为汇编服务, 构建 __pthread_key_create 函数别名 __GI___pthread_key_create.
 
+哎
+
+    那我们继续看 pthread_key_create 源码
+
+```C
+/* Thread-local data handling.  */
+struct pthread_key_struct
+{
+  /* Sequence numbers.  Even numbers indicated vacant entries.  Note
+     that zero is even.  We use uintptr_t to not require padding on
+     32- and 64-bit machines.  On 64-bit machines it helps to avoid
+     wrapping, too.  */
+  uintptr_t seq;
+
+  /* Destructor for the data.  */
+  void (*destr) (void *);
+};
+
+/* Table of the key information.  */
+struct pthread_key_struct __pthread_keys[PTHREAD_KEYS_MAX]
+  __attribute__ ((nocommon));
+hidden_data_def (__pthread_keys)
+```
