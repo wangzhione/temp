@@ -389,6 +389,13 @@ extern int __attribute__((weak)) global_var;
    hidden_proto doesn't make sense for assembly but the equivalent
    is to call via the HIDDEN_JUMPTARGET macro instead of JUMPTARGET.  */
 #  define hidden_def(name)	strong_alias (name, __GI_##name)
+#  define hidden_weak(name)	hidden_def (name)
+#  define hidden_ver(local, name) strong_alias (local, __GI_##name)
+#  define hidden_data_def(name)	strong_data_alias (name, __GI_##name)
+#  define hidden_tls_def(name)	hidden_data_def (name)
+#  define hidden_data_weak(name)	hidden_data_def (name)
+#  define hidden_data_ver(local, name) strong_data_alias (local, __GI_##name)
+#  define HIDDEN_JUMPTARGET(name) __GI_##name
 ```
 
     hidden_def (__pthread_key_create)
@@ -427,3 +434,471 @@ struct pthread_key_struct __pthread_keys[PTHREAD_KEYS_MAX]
   __attribute__ ((nocommon));
 hidden_data_def (__pthread_keys)
 ```
+
+    hidden_data_def 和 hidden_def 当前看宏展开相同, 字面意思是为数据重新定义汇编认得的别名.
+
+    __attribute__ ((common)) : 声明定义(立即获取内存)放入全局未初始化变量区域
+    __attribute__ ((nocommon)) : 声明定义放入全局初始化(零值)变量区域
+
+    看 pthread_key_struct 结构, 
+    分为 seq 标识位(0 没有使用, 1 标识已经使用) 
+    和 destr 析构函数
+
+```C
+/* Check whether an entry is unused.  */
+#define KEY_UNUSED(p) (((p) & 1) == 0)
+/* Check whether a key is usable.  We cannot reuse an allocated key if
+   the sequence counter would overflow after the next destroy call.
+   This would mean that we potentially free memory for a key with the
+   same sequence.  This is *very* unlikely to happen, A program would
+   have to create and destroy a key 2^31 times (on 32-bit platforms,
+   on 64-bit platforms that would be 2^63).  If it should happen we
+   simply don't use this specific key anymore.  */
+#define KEY_USABLE(p) (((uintptr_t) (p)) < ((uintptr_t) ((p) + 2)))
+```
+
+    其中 KEY_UNUSED 非常好理解, 最后一位是 1, 标识已经占用, 0 标识没有.
+
+    KEY_USABLE 理解起来, 需要看 pthread_key_delete.c 
+
+```C
+#include <errno.h>
+#include "pthreadP.h"
+#include <atomic.h>
+
+
+int
+__pthread_key_delete (pthread_key_t key)
+{
+  int result = EINVAL;
+
+  if (__glibc_likely (key < PTHREAD_KEYS_MAX))
+    {
+      unsigned int seq = __pthread_keys[key].seq;
+
+      if (__builtin_expect (! KEY_UNUSED (seq), 1)
+	  && ! atomic_compare_and_exchange_bool_acq (&__pthread_keys[key].seq,
+						     seq + 1, seq))
+	/* We deleted a valid key.  */
+	result = 0;
+    }
+
+  return result;
+}
+weak_alias (__pthread_key_delete, pthread_key_delete)
+```
+
+    pthread_key_create 和 pthread_key_delete 都会调用 atomic_compare_and_exchange_bool_acq 
+    进行 +1 + 1 操作.
+
+    atomic_compare_and_exchange_bool_acq 是 atomic_compare_and_exchange_bool acq 模式
+
+[memory_order](https://en.cppreference.com/w/c/atomic/memory_order)
+
+    atomic_compare_and_exchange_bool_acq (ptr, new, old) 
+    
+    等价于
+
+    if *ptr == old {
+        *ptr = new
+        return false
+    }
+    return true
+
+    __glibc_likely 是对 GUN C 提供的分支预测 __builtin_expect 指令包装
+
+```C
+#if __GNUC__ >= 3
+# define __glibc_unlikely(cond)	__builtin_expect ((cond), 0)
+# define __glibc_likely(cond)	__builtin_expect ((cond), 1)
+#else
+# define __glibc_unlikely(cond)	(cond)
+# define __glibc_likely(cond)	(cond)
+#endif
+```
+
+    __glibc_likely cond 表示, cond 触发概率很大
+
+    __builtin_expect ((cond), 1) 意思就是 (cond) == 1 概率很大.
+
+    从上面可以看出来, pthread POSIX 库, 返回值 0 是 success, !0 是 error, 并且包含具体原因.
+
+    好的我们继续挨个分析另外的两处代码
+
+    pthread_setspecific 和 pthread_getspecific
+
+```C
+#include <errno.h>
+#include <stdlib.h>
+#include "pthreadP.h"
+
+
+int
+__pthread_setspecific (pthread_key_t key, const void *value)
+{
+  struct pthread *self;
+  unsigned int idx1st;
+  unsigned int idx2nd;
+  struct pthread_key_data *level2;
+  unsigned int seq;
+
+  self = THREAD_SELF;
+
+  /* Special case access to the first 2nd-level block.  This is the
+     usual case.  */
+  if (__glibc_likely (key < PTHREAD_KEY_2NDLEVEL_SIZE))
+    {
+      /* Verify the key is sane.  */
+      if (KEY_UNUSED ((seq = __pthread_keys[key].seq)))
+	/* Not valid.  */
+	return EINVAL;
+
+      level2 = &self->specific_1stblock[key];
+
+      /* Remember that we stored at least one set of data.  */
+      if (value != NULL)
+	THREAD_SETMEM (self, specific_used, true);
+    }
+  else
+    {
+      if (key >= PTHREAD_KEYS_MAX
+	  || KEY_UNUSED ((seq = __pthread_keys[key].seq)))
+	/* Not valid.  */
+	return EINVAL;
+
+      idx1st = key / PTHREAD_KEY_2NDLEVEL_SIZE;
+      idx2nd = key % PTHREAD_KEY_2NDLEVEL_SIZE;
+
+      /* This is the second level array.  Allocate it if necessary.  */
+      level2 = THREAD_GETMEM_NC (self, specific, idx1st);
+      if (level2 == NULL)
+	{
+	  if (value == NULL)
+	    /* We don't have to do anything.  The value would in any case
+	       be NULL.  We can save the memory allocation.  */
+	    return 0;
+
+	  level2
+	    = (struct pthread_key_data *) calloc (PTHREAD_KEY_2NDLEVEL_SIZE,
+						  sizeof (*level2));
+	  if (level2 == NULL)
+	    return ENOMEM;
+
+	  THREAD_SETMEM_NC (self, specific, idx1st, level2);
+	}
+
+      /* Pointer to the right array element.  */
+      level2 = &level2[idx2nd];
+
+      /* Remember that we stored at least one set of data.  */
+      THREAD_SETMEM (self, specific_used, true);
+    }
+
+  /* Store the data and the sequence number so that we can recognize
+     stale data.  */
+  level2->seq = seq;
+  level2->data = (void *) value;
+
+  return 0;
+}
+weak_alias (__pthread_setspecific, pthread_setspecific)
+hidden_def (__pthread_setspecific)
+```
+
+    其中 struct pthread_key_data 是属于线程 struct pthread 私有字段
+
+```C
+/* We keep thread specific data in a special data structure, a two-level
+   array.  The top-level array contains pointers to dynamically allocated
+   arrays of a certain number of data pointers.  So we can implement a
+   sparse array.  Each dynamic second-level array has
+        PTHREAD_KEY_2NDLEVEL_SIZE
+   entries.  This value shouldn't be too large.  */
+#define PTHREAD_KEY_2NDLEVEL_SIZE       32
+
+/* We need to address PTHREAD_KEYS_MAX key with PTHREAD_KEY_2NDLEVEL_SIZE
+   keys in each subarray.  */
+#define PTHREAD_KEY_1STLEVEL_SIZE \
+  ((PTHREAD_KEYS_MAX + PTHREAD_KEY_2NDLEVEL_SIZE - 1) \
+   / PTHREAD_KEY_2NDLEVEL_SIZE)
+
+/* Data strcture used to handle thread priority protection.  */
+struct priority_protection_data
+{
+    ...
+
+  /* We allocate one block of references here.  This should be enough
+     to avoid allocating any memory dynamically for most applications.  */
+  struct pthread_key_data
+  {
+    /* Sequence number.  We use uintptr_t to not require padding on
+       32- and 64-bit machines.  On 64-bit machines it helps to avoid
+       wrapping, too.  */
+    uintptr_t seq;
+
+    /* Data pointer.  */
+    void *data;
+  } specific_1stblock[PTHREAD_KEY_2NDLEVEL_SIZE];
+
+  /* Two-level array for the thread-specific data.  */
+  struct pthread_key_data *specific[PTHREAD_KEY_1STLEVEL_SIZE];
+
+  /* Flag which is set when specific data is set.  */
+  bool specific_used;
+
+    ...
+};
+```
+
+    介绍中 specific 是 PTHREAD_KEY_1STLEVEL_SIZE * PTHREAD_KEY_2NDLEVEL_SIZE 形式,
+    当前由于 PTHREAD_KEYS_MAX = 1024, 其是 32*32 二维数组(稀疏矩阵)
+
+    specific_1stblock 和 specific 两个字段是个特殊技巧, 如果只是单纯使用 PTHREAD_KEY_2NDLEVEL_SIZE 
+    个 p key 只会用到 specific_1stblock, 不用 malloc 分配. 如果超了那么会走 specific 去分配.
+
+    从中可以看出来如果一个进程, 私有 TLS key 少于 PTHREAD_KEY_2NDLEVEL_SIZE 个性能最好. 
+
+    写这个的哥们花了不少心思 ~ 佩服
+
+    pthread_getspecific 也是大同小异
+
+```C
+#include <stdlib.h>
+#include "pthreadP.h"
+
+
+void *
+__pthread_getspecific (pthread_key_t key)
+{
+  struct pthread_key_data *data;
+
+  /* Special case access to the first 2nd-level block.  This is the
+     usual case.  */
+  if (__glibc_likely (key < PTHREAD_KEY_2NDLEVEL_SIZE))
+    data = &THREAD_SELF->specific_1stblock[key];
+  else
+    {
+      /* Verify the key is sane.  */
+      if (key >= PTHREAD_KEYS_MAX)
+	/* Not valid.  */
+	return NULL;
+
+      unsigned int idx1st = key / PTHREAD_KEY_2NDLEVEL_SIZE;
+      unsigned int idx2nd = key % PTHREAD_KEY_2NDLEVEL_SIZE;
+
+      /* If the sequence number doesn't match or the key cannot be defined
+	 for this thread since the second level array is not allocated
+	 return NULL, too.  */
+      struct pthread_key_data *level2 = THREAD_GETMEM_NC (THREAD_SELF,
+							  specific, idx1st);
+      if (level2 == NULL)
+	/* Not allocated, therefore no data.  */
+	return NULL;
+
+      /* There is data.  */
+      data = &level2[idx2nd];
+    }
+
+  void *result = data->data;
+  if (result != NULL)
+    {
+      uintptr_t seq = data->seq;
+
+      if (__glibc_unlikely (seq != __pthread_keys[key].seq))
+	result = data->data = NULL;
+    }
+
+  return result;
+}
+weak_alias (__pthread_getspecific, pthread_getspecific)
+hidden_def (__pthread_getspecific)
+```
+
+    其中 if (result != NULL) 然后 进程 key seq 和 线程 key seq 比对, 是个
+    清理操作, 大多数操作会这样: key create -> key destr -> key delete.
+
+    终于快结束了, 此刻带大家了解另个小东西 (不痛平台实现不一样, 简单截取)
+
+```C
+#include "pthreadP.h"
+#include <tls.h>
+
+pthread_t
+pthread_self (void)
+{
+  return (pthread_t) THREAD_SELF;
+}
+
+typedef struct
+{
+  dtv_t *dtv;
+  void *private;
+} tcbhead_t;
+
+/* Return the address of the dtv for the current thread.  */
+# define THREAD_DTV() \
+  (((tcbhead_t *) __builtin_thread_pointer ())->dtv)
+
+/* Return the thread descriptor for the current thread.  */
+# define THREAD_SELF \
+ ((struct pthread *)__builtin_thread_pointer () - 1)
+```
+
+    THREAD_SELF 标识当前线程地址, __builtin_thread_pointer 返回的是 tcbhead_t 首地址.
+
+```C
+The following built-in functions are supported on the SH1, SH2, SH3 and SH4 families of processors:
+
+— Built-in Function: void __builtin_set_thread_pointer (void *ptr)
+Sets the ‘GBR’ register to the specified value ptr. 
+This is usually used by system code that manages threads and execution contexts. 
+The compiler normally does not generate code that modifies the contents of ‘GBR’ 
+and thus the value is preserved across function calls. 
+Changing the ‘GBR’ value in user code must be done with caution, 
+since the compiler might use ‘GBR’ in order to access thread local variables.
+
+— Built-in Function: void * __builtin_thread_pointer (void)
+Returns the value that is currently set in the ‘GBR’ register.
+```
+
+    __builtin_set_thread_pointer 设置 "GBR" 寄存器 为指定值 ptr
+    __builtin_thread_pointer 返回当前在 "GBR" 寄存器 值
+
+## errno 实际使用
+
+    同 errno 交互最多还是 perror 或者 strerror
+
+```C
+#include <stdio.h>
+
+void perror(const char *s);
+
+#include <string.h>
+
+char *strerror(int errnum);
+
+int strerror_r(int errnum, char *buf, size_t buflen);
+            /* XSI-compliant */
+
+char *strerror_r(int errnum, char *buf, size_t buflen);
+            /* GNU-specific */
+
+char *strerror_l(int errnum, locale_t locale);
+```
+
+    我们这里简单说明下 strerror, 其它可以自行体会. strerror 是个很神奇的函数.
+
+    如果你传入得到 errno 是个确定值一定, 线程安全, 如果你乱传线程就不安全了. 
+    
+    多线程情况是未定义(内存泄露, 乱码, 等等).
+
+```C
+#include <libintl.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+
+/* Return a string describing the errno code in ERRNUM.
+   The storage is good only until the next call to strerror.
+   Writing to the storage causes undefined behavior.  */
+libc_freeres_ptr (static char *buf);
+
+char *
+strerror (int errnum)
+{
+  char *ret = __strerror_r (errnum, NULL, 0);
+  int saved_errno;
+
+  if (__glibc_likely (ret != NULL))
+    return ret;
+  saved_errno = errno;
+  if (buf == NULL)
+    buf = malloc (1024);
+  __set_errno (saved_errno);
+  if (buf == NULL)
+    return _("Unknown error");
+  return __strerror_r (errnum, buf, 1024);
+}
+```
+
+    逐个解析吧
+
+```C
+file : ~/glibc-2.31/include/libc-symbols.h
+
+/* Resource pointers to free in libc.so.  */
+#define libc_freeres_ptr(decl) \
+  __make_section_unallocated ("__libc_freeres_ptrs, \"aw\", %nobits") \
+  decl __attribute__ ((section ("__libc_freeres_ptrs" __sec_comment)))
+
+/* Tacking on "\n\t#" to the section name makes gcc put it's bogus
+   section attributes on what looks like a comment to the assembler.  */
+#ifdef HAVE_SECTION_QUOTES
+# define __sec_comment "\"\n\t#\""
+#else
+# define __sec_comment "\n\t#"
+#endif
+```
+
+    libc_freeres_ptr -> __attribute__ section "name" 
+
+    buf 放在特殊 section name 段中
+
+```txt
+__attribute__((section("name"))) variable attribute
+The section attribute specifies that a variable must be placed in a particular data section.
+
+Normally, the ARM compiler places the objects it generates in sections like .data and .bss. However, 
+you might require additional data sections or you might want a variable to appear in a special section, 
+for example, to map to special hardware.
+If you use the section attribute, read-only variables are placed in RO data sections, 
+read-write variables are placed in RW data sections unless you use the zero_init attribute. 
+In this case, the variable is placed in a ZI section.
+```
+
+    __strerror_r 实现也很简单, 有兴趣同学可以看下源码. 先查 errno 表, 查不到构建个
+
+    "Unknown error" + errnum
+
+    返回
+
+## TLS 知识再次拓展
+
+    大家看完 pthread key 设计, 大致知道线程私有变量是有限的. 最好别超过 32个 (以实现而定).
+
+    那如何来构建很多很多的 key 呢.
+
+    乍一看还挺有意思, 仔细一想很傻. 因为 一个 key -> 内存, 那这块内存就有无限可能.
+
+    所以只需要 一个 pthread key 足够了.. 具体是啥数据结构, 自己玩就行了 哈哈哈.
+
+    TLS 好处是有效避免了锁竞争, 但也隔离了线程间通信. 具体取舍看使用了. 
+
+    现在有的思路是, 为每个线程分配私有的资源属性, 随后汇总通信, 具体看场景了. 
+
+## TLS 再次拓然中拓然
+
+    C11 中引入了 _Thread_local 这种语言层面支持隐式 TLS 原理
+
+    这个说起来就复杂不少. 但还得继续说 ~
+
+    核心点关注 gcc 说明中
+
+    local-exec        initial-exec    local-dynamic   global-dynamic
+
+    还有 glibc 中 __tls_get_addr
+
+```C
+/* Type used for the representation of TLS information in the GOT.  */
+typedef struct
+{
+  unsigned long int ti_module;
+  unsigned long int ti_offset;
+} tls_index;
+
+extern void *__tls_get_addr (tls_index *ti);
+```
+
+    后续我们会尝试补充详细的实现细节. 这里先点到为止 ~
+
+    
