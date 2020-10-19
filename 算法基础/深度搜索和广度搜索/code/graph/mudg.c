@@ -136,7 +136,7 @@ static int graph_vertex_next(struct graph * g, int v, int w) {
 /*
  * 深度优先搜索遍历图的递归实现
  */
-static void graph_dfs_(struct graph * g, int v, bool * visited) {
+static void graph_dfs_partial(struct graph * g, int v, bool * visited) {
     visited[v] = true;
     // 业务处理
     printf(" %c", g->vertex[v]);
@@ -144,7 +144,7 @@ static void graph_dfs_(struct graph * g, int v, bool * visited) {
     // 遍历该顶点的所有邻接顶点. 若是没有访问过, 那么继续往下走
     for (int w = graph_vertex_first(g, v); w >= 0; w = graph_vertex_next(g, v, w)) {
         if (!visited[w]) {
-            graph_dfs_(g, w, visited);
+            graph_dfs_partial(g, w, visited);
         }
     }
 }
@@ -161,7 +161,7 @@ void graph_dfs(struct graph * g) {
 
     for (int v = 0; v < g->num; v++) {
         if (!visited[v]) {
-            graph_dfs_(g, v, visited);
+            graph_dfs_partial(g, v, visited);
         }
     }
 
@@ -171,28 +171,16 @@ void graph_dfs(struct graph * g) {
     free(visited);
 }
 
-static inline void graph_queue_visited_push(struct graph_queue * q, int v, bool * visited) {
-        if (!visited[v]) {
-            // 顶点标识, 并入队
-            visited[v] = true;
-            graph_queue_push(q, v);
-        }
-}
-
 void graph_bfs(struct graph * g) {
     if (!g || g->num <= 0) return;
 
     struct graph_queue * q = graph_queue_create(g->num);
 
-    // 顶点访问情况记录数组
-    bool * visited = calloc(g->num, sizeof(bool));
-    assert(visited && g->num > 0);
-
     // 业务处理
     printf("Matrix Undirected Graph BFS:");
 
     for (int i = 0; i < g->num; i++) {
-        graph_queue_visited_push(q, i, visited);
+        graph_queue_push_visited(q, i);
 
         // 队列不空继续
         int v;
@@ -202,7 +190,7 @@ void graph_bfs(struct graph * g) {
 
             // 遍历该顶点的所有邻接顶点. 若是没有访问过那就入队, 并处理
             for (int w = graph_vertex_first(g, v); w >= 0; w = graph_vertex_next(g, v, w)) {
-                graph_queue_visited_push(q, w, visited);
+                graph_queue_push_visited(q, w);
             }
         }
     }
@@ -210,7 +198,6 @@ void graph_bfs(struct graph * g) {
     // 业务处理
     putchar('\n');
 
-    free(visited);
     graph_queue_delete(q);
 }
 
