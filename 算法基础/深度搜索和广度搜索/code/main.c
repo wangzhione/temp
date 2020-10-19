@@ -117,20 +117,20 @@ tree_create(void) {
     return node1;
 }
 
-static void tree_delete_(struct tree * node) {
-    if (node->left) tree_delete_(node->left);
-    if (node->right) tree_delete_(node->right);
+static void tree_delete_partial(struct tree * node) {
+    if (node->left) tree_delete_partial(node->left);
+    if (node->right) tree_delete_partial(node->right);
     free(node);
 }
 
 void 
 tree_delete(struct tree * root) {
-    if (root) tree_delete_(root);
+    if (root) tree_delete_partial(root);
 }
 
 /****************************** 深度遍历 ******************************/
 
-static void tree_preorder_(struct stack * s) {
+static void tree_preorder_partial(struct stack * s) {
     struct tree * top;
 
     // 2.1 访问栈顶结点, 并将其出栈
@@ -168,12 +168,12 @@ tree_preorder(struct tree * root) {
     // 1. 先将根结点入栈
     stack_push(s, root);
     // 重复 2 - 4 直到栈空
-    tree_preorder_(s);
+    tree_preorder_partial(s);
 
     stack_free(s);
 }
 
-static void tree_inorder_(struct tree * node, struct stack * s) {
+static void tree_inorder_partial(struct tree * node, struct stack * s) {
     // 4. 重复第 2 - 3步, 直到栈空并且不存在待访问结点
     while (!stack_empty(s) || node) {
         // 2. 将当前结点的所有左孩子入栈, 直到左孩子为空
@@ -209,12 +209,12 @@ tree_inorder(struct tree * root) {
     struct stack s[1]; 
     stack_init(s);
 
-    tree_inorder_(root, s);
+    tree_inorder_partial(root, s);
 
     stack_free(s);
 }
 
-static void tree_postorder_(struct stack * s) { 
+static void tree_postorder_partial(struct stack * s) { 
     struct tree * top;
     // 记录前一次出栈结点
     struct tree * last = NULL;
@@ -262,7 +262,7 @@ tree_postorder(struct tree * root) {
     // 1. 先将根结点入栈
     stack_push(s, root);
     // 重复 1 - 4 直到栈空
-    tree_postorder_(s);
+    tree_postorder_partial(s);
 
     stack_free(s);
 }
