@@ -4,9 +4,9 @@
 #include "graph_queue.h"
 
 /*
- * 邻接链表图表示的无向图 (List Undirected Graph) 
+ * 邻接链表图表示的有向图 (List Directed Graph) 
  * 
- * cc -g -O2 -Wall -Wextra -Wno-sign-compare -o ludg ludg.c
+ * cc -g -O2 -Wall -Wextra -Wno-sign-compare -o ldg ldg.c
  */
 
 // 邻接链表中表对应链表的顶点
@@ -87,13 +87,17 @@ static int graph_get_position(struct graph * g, char c) {
 }
 
 /* 
- * 构建邻接链表图表示的无向图
+ * 构建邻接链表图表示的有向图
  * 
- *  A - F - G - E
- *  | \
- *  C - D
- *  |
- *  B
+ * | <=> ↑  +  ↓
+ * - <=> ← + →
+ * 
+ *      A
+ *      ↓
+ * C ← B → F
+ * ↑ ↘ |    ↓
+ * D ← E    G
+ * 
  */
 static struct graph * create_example_graph(void) {
     // 构建顶点
@@ -107,13 +111,15 @@ static struct graph * create_example_graph(void) {
 
     // 通过边关系, 构建 邻接链表
     char edges[][2] = {
-        {'A', 'C'}, 
-        {'A', 'D'}, 
-        {'A', 'F'}, 
-        {'C', 'B'}, 
-        {'C', 'D'}, 
-        {'F', 'G'},
-        {'G', 'E'}, 
+        {'A', 'B'}, 
+        {'B', 'C'}, 
+        {'B', 'E'}, 
+        {'B', 'F'}, 
+        {'C', 'E'}, 
+        {'D', 'C'}, 
+        {'E', 'B'}, 
+        {'E', 'D'}, 
+        {'F', 'G'}
     };
 
     for (int i = 0; i < LEN(edges); i++) {
@@ -127,11 +133,9 @@ static struct graph * create_example_graph(void) {
             continue;
         }
 
-        struct graph_node * nodev = graph_node_create(v);
         struct graph_node * nodew = graph_node_create(w);
 
         graph_vertex_insert(g->vertex + v, nodew);
-        graph_vertex_insert(g->vertex + w, nodev);
     }
 
     return g;
@@ -161,7 +165,7 @@ void graph_dfs(struct graph * g) {
     assert(visited && g->num > 0);
 
         // 业务处理
-    printf("List Undirected Graph DFS:");
+    printf("List Directed Graph DFS:");
 
     for (int v = 0; v < g->num; v++) {
         if (!visited[v]) {
@@ -182,7 +186,7 @@ void graph_bfs(struct graph * g) {
     struct graph_queue * q = graph_queue_create(g->num);
 
     // 业务处理
-    printf("List Undirected Graph BFS:");
+    printf("List Directed Graph BFS:");
 
     for (int i = 0; i < g->num; i++) {
         graph_queue_push_visited(q, i);
@@ -212,27 +216,34 @@ int main(void) {
     struct graph * g = create_example_graph();
 
     // 输出图
-    printf("List Undirected Graph:\n");
-    /*  A - F - G - E
-     *  | \
-     *  C - D
-     *  |
-     *  B
-     */
-    printf("  A - F - G - E\n");
-    printf("  | \\\n");
-    printf("  C - D\n");
-    printf("  |\n");
-    printf("  B\n");
+    printf("List Directed Graph:\n");
+    /* 
+    * 构建邻接矩阵有向图
+    * 
+    * | <=> ↑  +  ↓
+    * - <=> ← + →
+    * 
+    *      A
+    *      ↓
+    * C ← B → F
+    * ↑ ↘ |    ↓
+    * D ← E    G
+    * 
+    */
+    printf("     A\n");
+    printf("     ↓\n");
+    printf(" C ← B → F\n");
+    printf(" ↑ ↘ |   ↓\n");
+    printf(" D ← E   G\n");
 
     // 输出边和邻接矩阵关系
-    printf("List Undirected Graph vertex:");
+    printf("List Directed Graph vertex:");
     for (int i = 0; i < g->num; i++) {
         printf(" %c", g->vertex[i].data);
     }
     putchar('\n');
 
-    printf("List Undirected Graph edges:\n");
+    printf("List Directed Graph edges:\n");
     for (int i = 0; i < g->num; i++) {
         printf("%c | ", g->vertex[i].data);
 

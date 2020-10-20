@@ -54,7 +54,7 @@ inline int graph_queue_pop(struct graph_queue * q) {
     return v;
 }
 
-static inline void graph_queue_push_visited(struct graph_queue * q, int v) {
+inline void graph_queue_push_visited(struct graph_queue * q, int v) {
     if (!q->visited[v]) {
         // 顶点标识, 并入队
         q->visited[v] = true;
