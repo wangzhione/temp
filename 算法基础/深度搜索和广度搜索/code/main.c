@@ -7,6 +7,7 @@ extern void tree_preorder(struct tree * root);
 extern void tree_inorder(struct tree * root);
 extern void tree_postorder(struct tree * root);
 extern void tree_level(struct tree * root);
+extern void tree_level_optimize(struct tree * root);
 
 int main(void) {
     printf("Hello, 世界!\n");
@@ -27,6 +28,8 @@ int main(void) {
 
     // 二叉树 - 深度广度搜索 - 层次遍历
     tree_level(root);
+    putchar('\n');
+    tree_level_optimize(root);
     putchar('\n');
 
     tree_delete(root);
@@ -306,6 +309,46 @@ tree_level(struct tree * root) {
 
     q_free(q);
 }
+
+/*
+ * 层次遍历:
+ *      根结点 -> 下一层 | 左结点 -> 右结点
+ *
+ * 遍历算法:
+ *      1. 头结点首先判空, 决定是否继续
+ *      2. 构建辅助队列结构
+ *      3. 直接对头结点做业务处理
+ *      4. 尝试将不为空左结点右结点依次压入队列中
+ *      5. 队列出队赋值给保存头结点变量
+ *      重复 3 - 5 直到变量为空
+ */
+void 
+tree_level_optimize(struct tree * root) {
+    // 1. 头结点首先判空, 决定是否继续
+    if (!root) return;
+
+    // 2. 构建辅助队列结构
+    q_t q;
+    q_init(q);
+
+    do {
+        // 3. 直接对头结点做业务处理,
+        node_printf(root->node);
+
+        // 4. 尝试将不为空左结点右结点依次压入队列中
+        if (root->left) 
+            q_push(q, root->left);
+        if (root->right)
+            q_push(q, root->right);
+
+        // 5. 队列出队赋值给保存头结点变量
+        root = q_pop(q);
+
+    // 重复 3 - 5 直到变量为空   
+    } while (root);
+
+    q_free(q);
+} 
 
 /****************************** 广度遍历 ******************************/
 
