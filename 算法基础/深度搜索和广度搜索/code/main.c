@@ -315,16 +315,16 @@ tree_level(struct tree * root) {
  *      根结点 -> 下一层 | 左结点 -> 右结点
  *
  * 遍历算法:
- *      1. 头结点首先判空, 决定是否继续
+ *      1. 开始结点判空, 决定是否继续
  *      2. 构建辅助队列结构
- *      3. 直接对头结点做业务处理
+ *      3. 直接对结点做业务处理
  *      4. 尝试将不为空左结点右结点依次压入队列中
- *      5. 队列出队赋值给保存头结点变量
+ *      5. 队列出队赋值保存
  *      重复 3 - 5 直到变量为空
  */
 void 
 tree_level_optimize(struct tree * root) {
-    // 1. 头结点首先判空, 决定是否继续
+    // 1. 开始结点判空, 决定是否继续
     if (!root) return;
 
     // 2. 构建辅助队列结构
@@ -332,7 +332,7 @@ tree_level_optimize(struct tree * root) {
     q_init(q);
 
     do {
-        // 3. 直接对头结点做业务处理,
+        // 3. 直接对结点做业务处理
         node_printf(root->node);
 
         // 4. 尝试将不为空左结点右结点依次压入队列中
@@ -341,7 +341,7 @@ tree_level_optimize(struct tree * root) {
         if (root->right)
             q_push(q, root->right);
 
-        // 5. 队列出队赋值给保存头结点变量
+        // 5. 队列出队赋值保存
         root = q_pop(q);
 
     // 重复 3 - 5 直到变量为空   
