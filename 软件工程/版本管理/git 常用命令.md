@@ -21,8 +21,6 @@ ssh-keygen -t rsa -C "<email>"
 ssh -T git@github.com
 ```
 
-git 同步线上更新
-
 git diff
 
     tig or ide or ...
