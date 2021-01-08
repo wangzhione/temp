@@ -1,16 +1,31 @@
-# git 常用命令
+# git 烂笔头
 
-    触类旁通, 举一反三, 欢迎补充
+    触类旁通, 举一反三, 不求甚解, 欢迎补充
 
 ## 详细介绍
 
-git 同步线上更新
+git connect github
 
 ```Shell
-git pull
+# 1. 本地配置, 姓名和邮箱
+git config --global user.name "<name>"
+git config --global user.email "<email>"
+
+# 2. 生成 ssh 公钥
+ssh-keygen -t rsa -C "<email>"
+# 2.2 Eenter 回车三次
+# 2.3 根据提示复制 id_rsa.pub 内容
+# 2.4 github.com 打开 [Account settings]--[SSH Keys]页面，然后点[Add SSH Key] 
+
+# 3. 验证, 成功会提示 successfully
+ssh -T git@github.com
 ```
 
-    git pull : 同步线上更新
+git 同步线上更新
+
+git diff
+
+    tig or ide or ...
 
 git 强制远端覆盖本地
 
@@ -22,22 +37,6 @@ git reset --hard origin/master
     git fetch --all : 拉取所有更新, 不同步
 
     git reset --hard origin/master : 本地代码同步线上最新版本(会覆盖本地所有与远程仓库上同名的文件)
-
-git 分支清理
-
-```Shell
-# 清理本地冗余分支
-git branch | grep -v -E 'master$|preview$|staging$' | xargs git branch -D
-# 清理远端冗余分支
-# git branch -r | grep -v -E 'master$|preview$|staging$' | sed 's/origin\///g' | xargs -I {} echo 'git push origin :{}' | more
-git branch -r | grep -v -E 'master$|preview$|staging$' | sed 's/origin\///g' | xargs -I {} git push origin :{}
-# 本地分支类比远端分支重新整理
-git remote prune origin
-```
-
-    git branch -D [branch name] : 删除本地分支
-
-    git push origin :[branch name] : 删除远端分支
 
 git tag 管理
 
@@ -77,5 +76,23 @@ git config --global alias.ll "log --graph --all --pretty=format:'%Cred%h %Creset
     12) git diff HEAD <src> # [可选] 详细对比你提交的文件内容, 保证合并过程中的减少意外
     13) git push origin HEAD:<分支>
 
+git 分支清理
 
+```Shell
+# 清理本地冗余分支
+git branch | grep -v -E 'master$|preview$|staging$' | xargs git branch -D
+# 清理远端冗余分支
+# git branch -r | grep -v -E 'master$|preview$|staging$' | sed 's/origin\///g' | xargs -I {} echo 'git push origin :{}' | more
+git branch -r | grep -v -E 'master$|preview$|staging$' | sed 's/origin\///g' | xargs -I {} git push origin :{}
+# 本地分支类比远端分支重新整理
+git remote prune origin
+```
+
+    git branch -D [branch name] : 删除本地分支
+
+    git push origin :[branch name] : 删除远端分支
+
+git 查水表
+
+[git 版本控制手册](https://git-scm.com/book/zh/v2/%E8%B5%B7%E6%AD%A5-%E5%85%B3%E4%BA%8E%E7%89%88%E6%9C%AC%E6%8E%A7%E5%88%B6)
 
