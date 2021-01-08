@@ -717,7 +717,7 @@ hidden_def (__pthread_getspecific)
     其中 if (result != NULL) 然后 进程 key seq 和 线程 key seq 比对, 是个
     清理操作, 大多数操作会这样: key create -> key destr -> key delete.
 
-    终于快结束了, 此刻带大家了解另个小东西 (不痛平台实现不一样, 简单截取)
+    终于快结束了, 此刻带大家了解另个小东西 (不同平台实现不一样, 简单截取)
 
 ```C
 #include "pthreadP.h"
