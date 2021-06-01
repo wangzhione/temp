@@ -64,8 +64,17 @@ inline int socket_set_nonblock(socket_t s) {
 
 #endif
 
-// sockaddr_t 为 ipv6 socket 默认地址结构
-typedef struct sockaddr_in6 sockaddr_t[1];
+union sockaddr_all {
+	struct sockaddr s;
+	struct sockaddr_in v4;
+	struct sockaddr_in6 v6;
+};
+
+// sockaddr_t 为 socket 默认通用地址结构
+typedef struct {
+    union sockaddr_all u;
+    socklen_t len;
+} sockaddr_t[1];
 
 // socket_recv - 读取数据
 inline int socket_recv(socket_t s, void * buf, int sz) {
@@ -128,35 +137,8 @@ inline int socket_get_error(socket_t s) {
     return getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&err, &len) ? no : err;
 }
 
-// socket_getsockname - 获取 socket 的本地地址
-inline int socket_getsockname(socket_t s, sockaddr_t name) {
-    socklen_t len = sizeof (sockaddr_t);
-    return getsockname(s, (struct sockaddr *)name, &len);
-}
-
-// socket_getpeername - 获取 client socket 的地址
-inline int socket_getpeername(socket_t s, sockaddr_t name) {
-    socklen_t len = sizeof (sockaddr_t);
-    return getpeername(s, (struct sockaddr *)name, &len);
-}
-
 // socket_ntop - 点分十进制转 ip 串
-inline char * socket_ntop(sockaddr_t a, char ip[INET6_ADDRSTRLEN]) {
-    // 默认当前 socket 库只处理 ipv4 版本
-    a->sin6_family = AF_INET6;
-    return (char *)inet_ntop(a->sin6_family, &a->sin6_addr, ip, INET6_ADDRSTRLEN);
-}
-
-// socket_recvfrom  - recvfrom 接受函数
-inline int socket_recvfrom(socket_t s, void * buf, int sz, sockaddr_t in) {
-    socklen_t inlen = sizeof(sockaddr_t);
-    return (int)recvfrom(s, buf, sz, 0, (struct sockaddr *)in, &inlen);
-}
-
-// socket_sendto    - sendto 发送函数
-inline int socket_sendto(socket_t s, const void * buf, int sz, const sockaddr_t to) {
-    return (int)sendto(s, buf, sz, 0, (struct sockaddr *)to, sizeof(sockaddr_t));
-}
+extern char * socket_ntop(sockaddr_t a, char ip[INET6_ADDRSTRLEN]);
 
 // socket_recvn - socket 接受 sz 个字节
 extern int socket_recvn(socket_t s, void * buf, int sz);
@@ -164,35 +146,14 @@ extern int socket_recvn(socket_t s, void * buf, int sz);
 // socket_sendn - socket 发送 sz 个字节
 extern int socket_sendn(socket_t s, const void * buf, int sz);
 
-// socket_bind - bind    绑定函数
-inline int socket_bind(socket_t s, const sockaddr_t a) {
-    return bind(s, (struct sockaddr *)a, sizeof(sockaddr_t));
-}
+// socket_bind - 返回绑定好端口的 socket fd, family return PF_INET PF_INET6
+extern socket_t socket_bind(const char * ip, uint16_t port, uint8_t protocol, int * family);
 
-// socket_listen - listen  监听函数
-inline int socket_listen(socket_t s) {
-    return listen(s, SOMAXCONN);
-}
+// socket_listen - 返回监听好的 socket fd
+extern socket_t socket_listen(const char * ip, uint16_t port, int backlog);
 
-// socket_accept - accept  等接函数
-inline socket_t socket_accept(socket_t s, sockaddr_t a) {
-    socklen_t len = sizeof (sockaddr_t);
-    return accept(s, (struct sockaddr *)a, &len);
-}
-
-// socket_connect - connect 链接函数
-inline int socket_connect(socket_t s, const sockaddr_t a) {
-    return connect(s, (const struct sockaddr *)a, sizeof(sockaddr_t));
-}
-
-// socket_binds - 返回绑定好端口的 socket fd, family return PF_INET PF_INET6
-extern socket_t socket_binds(const char * ip, uint16_t port, uint8_t protocol, int * family);
-
-// socket_listens - 返回监听好的 socket fd
-extern socket_t socket_listens(const char * ip, uint16_t port, int backlog);
-
-// socket_connects - 返回链接后的阻塞套接字
-extern socket_t socket_connects(char ip[INET6_ADDRSTRLEN], uint16_t port);
+// socket_connect - 返回链接后的阻塞套接字
+extern socket_t socket_connect(char ip[INET6_ADDRSTRLEN], uint16_t port);
 
 // socket_connectms - 尝试在固定时间内返回链接后的非阻塞套接字
 extern socket_t socket_connectms(char ip[INET6_ADDRSTRLEN], uint16_t port, int ms);

@@ -34,7 +34,7 @@ extern void spoll_delete(spoll_t p);
 //
 extern void spoll_del(spoll_t p, socket_t s);
 extern bool spoll_add(spoll_t p, socket_t s, void * u);
-extern void spoll_mod(spoll_t p, socket_t s, void * u, bool read, bool write);
+extern int spoll_mod(spoll_t p, socket_t s, void * u, bool read, bool write);
 
 //
 // spoll_wait    - wait 函数, 守株待兔

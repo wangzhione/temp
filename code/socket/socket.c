@@ -1,5 +1,12 @@
 #include "socket.h"
 
+inline char * 
+socket_ntop(sockaddr_t a, char ip[INET6_ADDRSTRLEN]) {
+    if (a->len == sizeof (a->u.v4))
+        return (char *)inet_ntop(a->u.v4.sin_family, &a->u.v4.sin_addr, ip, INET_ADDRSTRLEN);
+    return (char *)inet_ntop(a->u.v6.sin6_family, &a->u.v6.sin6_addr, ip, INET6_ADDRSTRLEN);
+}
+
 // socket_recvn - socket 接受 sz 个字节
 int 
 socket_recvn(socket_t s, void * buf, int sz) {
@@ -32,7 +39,6 @@ socket_sendn(socket_t s, const void * buf, int sz) {
     return sz - n;
 }
 
-// socket_binds - 返回绑定好端口的 socket fd, family return PF_INET PF_INET6
 socket_t 
 socket_binds(const char * ip, uint16_t port, uint8_t protocol, int * family) {
     // 构建 getaddrinfo 请求参数, ipv6 兼容 ipv4
@@ -40,7 +46,7 @@ socket_binds(const char * ip, uint16_t port, uint8_t protocol, int * family) {
     char ports[sizeof "65535"]; sprintf(ports, "%hu", port);
     struct addrinfo * rsp, req = {
         .ai_flags    = AI_PASSIVE,
-        .ai_family   = PF_UNSPEC,
+        .ai_family   = AF_UNSPEC,
         .ai_socktype = protocol == IPPROTO_TCP ? SOCK_STREAM : SOCK_DGRAM,
         .ai_protocol = protocol,
     };
@@ -67,9 +73,8 @@ err_free:
     return INVALID_SOCKET;
 }
 
-// socket_listens - 返回监听好的 socket fd
 socket_t 
-socket_listens(const char * ip, uint16_t port, int backlog) {
+socket_listen(const char * ip, uint16_t port, int backlog) {
     socket_t fd = socket_binds(ip, port, IPPROTO_TCP, NULL);
     if (INVALID_SOCKET != fd && listen(fd, backlog)) {
         socket_close(fd);
@@ -80,47 +85,63 @@ socket_listens(const char * ip, uint16_t port, int backlog) {
 
 // socket_addr - 通过 ip, port 构造 ipv4 结构
 int socket_addr(char ip[INET6_ADDRSTRLEN], uint16_t port, sockaddr_t a) {
-    int ret = -1;
-    struct in6_addr s6;
-
+    
+    // 尝试转 v4 和 v6 地址
     if (ip != NULL) {
         if (*ip == 0)
             ip = NULL;
-        else    
-            ret = inet_pton(AF_INET6, ip, &s6);
-    }
-    if (ret != -1) {
-        memset(a, 0, sizeof(sockaddr_t));
-        a->sin6_family = AF_INET6;
-        a->sin6_addr = s6;
-        a->sin6_port = htons(port);
-    } else {
-        struct addrinfo * rsp, req = {
-            .ai_family   = PF_INET6,
-            .ai_socktype = SOCK_STREAM,
-        };
-
-        char * prots = NULL;
-        char temp[sizeof "65535"]; 
-        if (port > 0) {
-            sprintf(temp, "%hu", port);
-            prots = temp;
-        } 
-        if (getaddrinfo(ip, prots, &req, &rsp)) {
-            return -1;
+        else {
+            union {
+                struct in_addr s4;
+                struct in6_addr s6;
+            } s;
+            if (inet_pton(AF_INET, ip, &s) != -1) {
+                memset(a, 0, sizeof(sockaddr_t));
+                a->u.v4.sin_family = AF_INET;
+                a->u.v4.sin_addr = s.s4;
+                a->u.v4.sin_port = htons(port);
+                a->len = sizeof(a->u.v4);
+                return 0;
+            }
+            if (inet_pton(AF_INET6, ip, &s) != -1) {
+                memset(a, 0, sizeof(sockaddr_t));
+                a->u.v6.sin6_family = AF_INET6;
+                a->u.v6.sin6_addr = s.s6;
+                a->u.v6.sin6_port = htons(port);
+                a->len = sizeof(a->u.v6);
+                return 0;
+            }
         }
+    } 
 
-        // 只尝试默认第一个
-        memcpy(a, rsp->ai_addr, rsp->ai_addrlen);
-        freeaddrinfo(rsp);
+    struct addrinfo * rsp, req = {
+        .ai_family   = AF_UNSPEC,
+        .ai_socktype = SOCK_STREAM,
+    };
+
+    char * prots = NULL;
+    char temp[sizeof "65535"]; 
+    if (port > 0) {
+        sprintf(temp, "%hu", port);
+        prots = temp;
+    } 
+    if (getaddrinfo(ip, prots, &req, &rsp)) {
+        return -1;
     }
+
+    // 只尝试默认第一个
+    memset(a, 0, sizeof(sockaddr_t));
+    memcpy(&a->u, rsp->ai_addr, rsp->ai_addrlen);
+    a->len = rsp->ai_addrlen;
+    
+    freeaddrinfo(rsp);
 
     return 0;
 }
 
 
 socket_t 
-socket_connects(char ip[INET6_ADDRSTRLEN], uint16_t port) {
+socket_connect(char ip[INET6_ADDRSTRLEN], uint16_t port) {
     sockaddr_t a;
     // 先解析 sockaddr 地址
     if (socket_addr(ip, port, a) < 0)
@@ -129,7 +150,7 @@ socket_connects(char ip[INET6_ADDRSTRLEN], uint16_t port) {
     // 获取 tcp socket 尝试 parse connect
     socket_t s = socket_stream();
     if (s != INVALID_SOCKET) {
-        if (socket_connect(s, a) >= 0)
+        if (connect(s, &a->u.s, a->len) >= 0)
             return s;
 
         socket_close(s);
@@ -145,14 +166,14 @@ static int socket_connectm(socket_t s, const sockaddr_t a, int ms) {
     fd_set rset, wset, eset;
 
     // 还是阻塞的connect
-    if (ms < 0) return socket_connect(s, a);
+    if (ms < 0) return connect(s, &a->u.s, a->len);
 
     // 非阻塞登录, 先设置非阻塞模式
     r = socket_set_nonblock(s);
     if (r < 0) return r;
 
     // 尝试连接, connect 返回 -1 并且 errno == EINPROGRESS 表示正在建立链接
-    r = socket_connect(s, a);
+    r = connect(s, &a->u.s, a->len);
     // connect 链接中, linux 是 EINPROGRESS，winds 是 WSAEWOULDBLOCK
     if (r >= 0 || errno != EINPROGRESS) return r;
 

@@ -30,5 +30,5 @@ RUN       = $(HEAD) $(IINC) -o $@ $^ $(LIB)
 
 all : main.out
 
-main.out : main.c socket.c strerr.c
-	cc -g -O2 -Werror -Wall -Wextra -D_GNU_SOURCE -o $@ $^
+main.out : main.c socket.c strerr.c socket_server.c spoll.c
+	cc -g -O2 -Wall -Wextra -D_GNU_SOURCE -o $@ $^

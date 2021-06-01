@@ -2,33 +2,31 @@
 #include <stdlib.h>
 
 #include "socket.h"
-
-extern int socket_addr(char ip[INET6_ADDRSTRLEN], uint16_t port, sockaddr_t a);
+#include "socket_buffer.h"
 
 int main(void) {
+    int status;
 
-    sockaddr_t addr;
-
-    int ret = socket_addr("::0.0.0.0", 9527, addr);
-    if (ret < 0) {
-        EXIT("socket_addr error");
+    // 尝试 bind 服务
+    socket_t server_fd = socket_listen(NULL, 9527, 8);
+    if (server_fd == INVALID_SOCKET) {
+        EXIT("socket_listen is failed");
     }
 
-    char ip[INET6_ADDRSTRLEN] = { 0 };
-    char * res = socket_ntop(addr, ip);
-    printf("ip = [%s], res = [%s], port = %d\n", ip, res, ntohs(addr->sin6_port));
-
-    ret = socket_addr("", 9527, addr);
-    if (ret < 0) {
-        EXIT("socket_addr error");
+    // 输出 socket 相关地址信息
+    sockaddr_t sa;
+    sa->len = sizeof(sa);
+    status = getsockname(server_fd, &sa->u.s, &sa->len);
+    if (status < 0) {
+        EXIT("getsockname is failed");
     }
 
-    memset(ip, 0, sizeof ip);
-    res = socket_ntop(addr, ip);
-    printf("ip = [%s], res = [%s], port = %d\n", ip, res, ntohs(addr->sin6_port));
+    // 打印地址信息
+    char ip[INET6_ADDRSTRLEN];
+    uint8_t uport = sa->len == sizeof(sa->u.v4) ? sa->u.v4.sin_port : sa->u.v6.sin6_port;
+    printf("ip = %s, port = %hu\n", socket_ntop(sa, ip), ntohs(uport));
 
-
-
+    socket_close(server_fd);
 
     exit(EXIT_FAILURE);
 }
