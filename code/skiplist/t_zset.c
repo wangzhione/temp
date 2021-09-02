@@ -174,7 +174,7 @@ zskiplistNode * zslInsert(zskiplist * zsl, double score, char * ele) {
         zsl->level = level;
     }
     x = zslCreateNode(level, score, ele);
-    if (NULL == x) {
+    if (!x) {
         return NULL;
     }
     for (i = 0; i < level; i++) {
