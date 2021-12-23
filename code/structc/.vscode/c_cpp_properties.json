@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceRoot}/modular/module",
+                "${workspaceRoot}/modular/struct",
+                "${workspaceRoot}/modular/system"
+            ],
+            "defines": [
+                "_DEBUG",
+                "__GNUC__",
+                "__linux__",
+                "_GNU_SOURCE"
+            ],
+            "compilerPath": "/usr/bin/gcc"
+        }
+    ],
+    "version": 4
+}
