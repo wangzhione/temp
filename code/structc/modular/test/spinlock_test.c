@@ -25,32 +25,6 @@ struct rwlock {
     atomic_long rlock;
 };
 
-/*
-    _Bool atomic_compare_exchange_strong(volatile A * obj,
-                                            C * expected, C desired);
-
-    _Bool atomic_compare_exchange_weak( volatile A * obj,
-                                        C * expected, C desired );
-
-    if (memcmp(obj, expected, sizeof *obj) == 0) {
-        memcpy(obj, &desired, sizeof *obj);
-        return true;
-    } else {
-        memcpy(expected, obj, sizeof *obj);
-        return false;
-    }
-*/
-
-inline bool atomic_bool_compare_exchange_weak(volatile atomic_bool * wlock) {
-    bool expected = false;
-    return atomic_compare_exchange_weak(wlock, &expected, true);
-}
-
-inline bool atomic_bool_compare_exchange_strong(volatile atomic_bool * wlock) {
-    bool expected = false;
-    return atomic_compare_exchange_strong(wlock, &expected, true);
-}
-
 // atomic_w_lock - add write lock
 extern void atomic_w_lock(struct rwlock * rw) {
     // write lock
