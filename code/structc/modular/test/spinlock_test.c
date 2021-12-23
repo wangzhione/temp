@@ -21,9 +21,43 @@
 // struct rwlock need zero is atom interface extend
 // need var init struct rwlock rw = { 0,0 };
 struct rwlock {
+    atomic_bool wlock;
     atomic_long rlock;
-    atomic_long wlock;
 };
+
+/*
+    _Bool atomic_compare_exchange_strong(volatile A * obj,
+                                            C * expected, C desired);
+
+    _Bool atomic_compare_exchange_weak( volatile A * obj,
+                                        C * expected, C desired );
+
+    if (memcmp(obj, expected, sizeof *obj) == 0) {
+        memcpy(obj, &desired, sizeof *obj);
+        return true;
+    } else {
+        memcpy(expected, obj, sizeof *obj);
+        return false;
+    }
+*/
+
+inline bool atomic_bool_compare_exchange_weak(volatile atomic_bool * wlock) {
+    bool expected = false;
+    return atomic_compare_exchange_weak(wlock, &expected, true);
+}
+
+inline bool atomic_bool_compare_exchange_strong(volatile atomic_bool * wlock) {
+    bool expected = false;
+    return atomic_compare_exchange_strong(wlock, &expected, true);
+}
+
+// atomic_w_lock - add write lock
+extern void atomic_w_lock(struct rwlock * rw) {
+    // write lock
+    while (!atomic_bool_compare_exchange_weak(&rw->wlock)) {}
+    // 等待读锁释放
+    while (atomic_load(&rw->rlock)) {}
+}
 
 // atomic_r_lock - add read lock
 extern void atomic_r_lock(struct rwlock * rw) {
@@ -41,14 +75,6 @@ extern void atomic_r_lock(struct rwlock * rw) {
         // 还是有写, 收回刚添加的读计数
         atomic_fetch_sub(&rw->rlock, 1);
     }
-}
-
-// atomic_w_lock - add write lock
-extern void atomic_w_lock(struct rwlock * rw) {
-    // write lock
-    while (atomic_long_test_and_set(&rw->wlock)) {}
-    // 等待读锁释放
-    while (atomic_load(&rw->rlock)) {}
 }
 
 // atomic_w_unlock - unlock write lock
@@ -83,7 +109,7 @@ extern bool atomic_r_trylock(struct rwlock * rw) {
 // atomic_w_trylock - try add write lock
 extern bool atomic_w_trylock(struct rwlock * rw) {
     // 尝试抢占写锁
-    if (atomic_long_test_and_set(&rw->wlock)) {
+    if (atomic_bool_compare_exchange_strong(&rw->wlock)) {
         if (atomic_load(&rw->rlock)) {
             // 存在读锁, 释放写锁
             atomic_store(&rw->wlock, 0);
