@@ -86,7 +86,7 @@ extern bool atomic_w_trylock(struct rwlock * rw) {
     if (atomic_bool_compare_exchange_strong(&rw->wlock)) {
         if (atomic_load(&rw->rlock)) {
             // 存在读锁, 释放写锁
-            atomic_store(&rw->wlock, 0);
+            atomic_store(&rw->wlock, false);
             return false;
         }
         return true;
