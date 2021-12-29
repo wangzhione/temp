@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <sys/types.h>
 
+#include "system.h"
 #include "struct.h"
 
 #if defined(__linux__) && defined(__GNUC__)
@@ -113,7 +114,10 @@ inline int socket_set_nonblock(socket_t s) {
 
 // socket_recv - 读取数据
 inline int socket_recv(socket_t s, void * buf, int sz) {
-    return sz > 0 ? (int)recv(s, buf, sz, 0) : 0;
+    if (likely(sz > 0)) {
+        return (int)recv(s, buf, sz, 0);
+    }
+    return 0;
 }
 
 // socket_send - 写入数据
@@ -190,6 +194,13 @@ typedef struct {
     socklen_t len;
 } sockaddr_t[1];
 
+inline void sockaddr_init(sockaddr_t a, int family) {
+    assert(family == AF_INET || family == AF_INET6);
+    memset(a, 0, sizeof(a));
+    a->s.sa_family = family;
+    a->len = family == AF_INET ? sizeof(a->s4) : sizeof(a->s6);
+}
+
 extern int socket_addr(sockaddr_t a, const char * host, uint16_t port, int family);
 
 // socket_getsockname - 获取 socket 的本地地址
@@ -240,5 +251,12 @@ extern int socket_recvn(socket_t s, void * buf, int sz);
 // socket_sendn - socket 发送 sz 个字节
 extern int socket_sendn(socket_t s, const void * buf, int sz);
 
-// socket_connect_timeout - connect 带毫秒超时的链接, 返回非阻塞 socket
+// socket_connect_timeout - 毫秒超时的 connect
 extern socket_t socket_connect_timeout(const sockaddr_t a, int ms);
+
+extern socket_t socket_connect(const sockaddr_t a);
+
+inline int socket_accept(socket_t s, sockaddr_t a) {
+    a->len = sizeof(struct sockaddr_in6);
+    return accept(s, &a->s, &a->len);
+}

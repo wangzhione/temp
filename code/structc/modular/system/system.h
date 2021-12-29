@@ -16,6 +16,16 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/*
+project defined template
+
+#if defined(__linux__) && defined(__GNUC__)
+
+#elif defined(_WIN32) && defined(_MSC_VER)
+
+#endif
+*/
+
 //
 // 约定: BEST NEW VERSION 操作系统 Linux + 编译工具 GCC
 //
@@ -43,6 +53,9 @@ __attribute__((__packed__))
 #   define unlikely(x) __builtin_expect(!!(x), 0)
 # endif
 
+//
+// 约定: BEST NEW VERSION 操作系统 window + vs
+//
 #elif defined(_WIN32) && defined(_MSC_VER)
 
 //
@@ -71,3 +84,15 @@ __pragma (pack(pop))
 #define unlikely(x)  (x)
 
 #endif
+
+// small - 转本地字节序(小端)
+inline uint32_t small(uint32_t x) {
+# ifdef ISBIG
+    uint8_t t;
+    uint8_t * p = (uint8_t *)&x;
+
+    t = p[0]; p[0] = p[3]; p[3] = t;
+    t = p[1]; p[1] = p[2]; p[2] = t;
+# endif
+    return x;
+}

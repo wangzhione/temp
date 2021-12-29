@@ -170,13 +170,13 @@ socket_sendn(socket_t s, const void * buf, int sz) {
     return sz - n;
 }
 
-// socket_connect - connect 带毫秒超时的链接, 返回非阻塞 socket
-static int socket_connect(socket_t s, const sockaddr_t a, int ms) {
+// socket_connect_timeout_partial 带毫秒超时的 connect, 返回非阻塞 socket
+static int socket_connect_timeout_partial(socket_t s, const sockaddr_t a, int ms) {
     int n, r;
     struct timeval timeout;
     fd_set rset, wset, eset;
 
-    // 还是阻塞的connect
+    // 还是阻塞的 connect
     if (ms < 0) return connect(s, &a->s, a->len);
 
     // 非阻塞登录, 先设置非阻塞模式
@@ -218,9 +218,10 @@ socket_connect_timeout(const sockaddr_t a, int ms) {
     // 获取 tcp socket 尝试 parse connect
     socket_t s = socket_stream();
     if (s != INVALID_SOCKET) {
-        if (socket_connect(s, a, ms) >= 0) {
-            return s;
-        }
+        if (socket_connect_timeout_partial(s, a, ms) >= 0) {
+            if (socket_set_block(s) >= 0)
+                return s;
+        } 
 
         socket_close(s);
     }
@@ -229,4 +230,20 @@ socket_connect_timeout(const sockaddr_t a, int ms) {
     char ip[INET6_ADDRSTRLEN];
     int port = socket_ntop(a, ip);
     RETURN(INVALID_SOCKET, "ip = %s, port = %d, ms = %d", ip, port, ms);
+}
+
+socket_t 
+socket_connect(const sockaddr_t a) {
+    socket_t s = socket_stream();
+    if (s != INVALID_SOCKET) {
+        if (connect(s, &a->s, a->len) >= 0) {
+            return s;
+        }
+
+        socket_close(s);
+    }
+
+    char ip[INET6_ADDRSTRLEN];
+    int port = socket_ntop(a, ip);
+    RETURN(INVALID_SOCKET, "ip = %s, port = %d", ip, port);
 }
