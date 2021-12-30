@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "strext.h"
+#include "struct.h"
 
 #ifndef CSTR_INT
 

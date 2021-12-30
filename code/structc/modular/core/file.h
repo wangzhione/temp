@@ -1,9 +1,8 @@
 #pragma once
 
-#include "atom.h"
 #include "struct.h"
 #include "strext.h"
-#include "stdext.h"
+#include "spinlock.h"
 
 //
 // file_f - 文件更新行为

@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include "atom.h"
 #include "list.h"
 #include "times.h"
 #include "thread.h"

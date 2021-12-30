@@ -12,7 +12,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-#include "system.h"
 #include "stdext.h"
 
 //

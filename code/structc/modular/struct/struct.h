@@ -16,6 +16,7 @@
 #include <inttypes.h>
 
 #include "alloc.h"
+#include "spinlock.h"
 
 #ifndef CMP_F
 #define CMP_F

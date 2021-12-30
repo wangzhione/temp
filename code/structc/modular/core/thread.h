@@ -1,8 +1,10 @@
 ﻿#pragma once
 
-#include "struct.h"
 #include <pthread.h>
 #include <semaphore.h>
+
+#include "struct.h"
+#include "spinlock.h"
 
 //
 // pthread_async - 启动无需等待的线程

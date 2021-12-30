@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #include "cstr.h"
+#include "strext.h"
 
 //
 // c json fast parse, type is all design

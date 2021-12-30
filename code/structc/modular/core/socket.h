@@ -196,7 +196,7 @@ typedef struct {
 
 inline void sockaddr_init(sockaddr_t a, int family) {
     assert(family == AF_INET || family == AF_INET6);
-    memset(a, 0, sizeof(a));
+    memset(a, 0, sizeof(sockaddr_t));
     a->s.sa_family = family;
     a->len = family == AF_INET ? sizeof(a->s4) : sizeof(a->s6);
 }
@@ -214,7 +214,7 @@ inline int socket_getpeername(socket_t s, sockaddr_t name) {
 }
 
 // socket_ntop - sin_addr or sin6_addr -> ip 串, return -1 error or port
-extern int socket_ntop(sockaddr_t a, char ip[INET6_ADDRSTRLEN]);
+extern int socket_ntop(const sockaddr_t a, char ip[INET6_ADDRSTRLEN]);
 
 // socket_bind - 返回绑定好端口的 socket fd, family return AF_INET AF_INET6
 extern socket_t socket_binds(const char * host, uint16_t port, uint8_t protocol, int * family);

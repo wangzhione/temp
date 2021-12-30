@@ -25,8 +25,8 @@ inline static int timer_node_time_cmp(const struct timer_node * l,
 
 // timer_list 链表对象管理器
 struct timer_list {
-    int id;                   // 当前 timer node id
-    atom_t lock;              // 自旋锁
+    atomic_int id;            // 当前 timer node id
+    atomic_flag lock;         // 自旋锁
     volatile bool status;     // true is thread loop, false is stop
     struct timer_node * list; // timer list list
 };
@@ -41,17 +41,17 @@ inline int timer_list_sus(struct timer_list * list) {
 
 // timer_list_run - 线程安全, 需要再 loop 之后调用
 inline void timer_list_run(struct timer_list * list) {
-    atom_lock(list->lock);
+    atomic_flag_lock(&list->lock);
     struct timer_node * node = list->list;
     list->list = list_next(node);
-    atom_unlock(list->lock);
+    atomic_flag_unlock(&list->lock);
 
     node->ftimer(node->arg);
     free(node);
 }
 
 // 定时器管理单例对象
-static struct timer_list timer;
+static struct timer_list timer = { .lock = ATOMIC_FLAG_INIT };
 
 //
 // timer_del - 删除定时器事件
@@ -61,18 +61,18 @@ static struct timer_list timer;
 inline void 
 timer_del(int id) {
     if (timer.list) {
-        atom_lock(timer.lock);
+        atomic_flag_lock(&timer.lock);
         free(list_pop(&timer.list, timer_node_id_cmp, (void *)(intptr_t)id));
-        atom_unlock(timer.lock);
+        atomic_flag_unlock(&timer.lock);
     }
 }
 
 // timer_new - timer_node 定时器结点构建
 static struct timer_node * timer_new(int s, node_f ftimer, void * arg) {
     struct timer_node * node = malloc(sizeof(struct timer_node));
-    node->id = atom_inc(timer.id);
+    node->id = atomic_fetch_add(&timer.id, 1);
     if (node->id < 0)
-        node->id = atom_and(timer.id, INT_MAX);
+        node->id = atomic_fetch_and(&timer.id, INT_MAX);
     node->arg = arg;
     node->ftimer = ftimer;
     timespec_get(&node->t, TIME_UTC);
@@ -115,7 +115,7 @@ timer_add(int ms, void * ftimer, void * arg) {
 
     struct timer_node * node = timer_new(ms, ftimer, arg);
     int id = node->id;
-    atom_lock(timer.lock);
+    atomic_flag_lock(&timer.lock);
 
     list_add(&timer.list, timer_node_time_cmp, node);
 
@@ -129,6 +129,6 @@ timer_add(int ms, void * ftimer, void * arg) {
         }
     }
 
-    atom_unlock(timer.lock);
+    atomic_flag_unlock(&timer.lock);
     return id;
 }

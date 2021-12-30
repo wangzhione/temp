@@ -1,11 +1,11 @@
 ﻿#pragma once
 
 #include "q.h"
-#include "atom.h"
+#include "spinlock.h"
 
 struct mq {
     q_t       q;       // 队列
-    atom_t lock;       // 自旋锁
+    atomic_flag lock;  // 自旋锁
 };
 
 typedef struct mq * mq_t;
@@ -29,7 +29,7 @@ inline void mq_delete(mq_t q, node_f fdie) {
 inline mq_t mq_create(void) {
     struct mq * q = malloc(sizeof(struct mq));
     q_init(q->q);
-    q->lock = 0;
+    atomic_flag_clear(&q->lock);
     return q;
 }
 
@@ -39,9 +39,9 @@ inline mq_t mq_create(void) {
 // return   : 若 mq empty return NULL
 //
 inline void * mq_pop(mq_t q) {
-    atom_lock(q->lock);
+    atomic_flag_lock(&q->lock);
     void * m = q_pop(q->q);
-    atom_unlock(q->lock);
+    atomic_flag_unlock(&q->lock);
     return m;
 }
 
@@ -52,9 +52,9 @@ inline void * mq_pop(mq_t q) {
 // return   : void
 //
 inline void mq_push(mq_t q, void * m) {
-    atom_lock(q->lock);
+    atomic_flag_lock(&q->lock);
     q_push(q->q, m);
-    atom_unlock(q->lock);
+    atomic_flag_unlock(&q->lock);
 }
 
 //
@@ -64,15 +64,15 @@ inline void mq_push(mq_t q, void * m) {
 //
 extern inline int mq_len(mq_t q) {
     int cap, head, tail;
-    atom_lock(q->lock);
+    atomic_flag_lock(&q->lock);
     if ((tail = q->q->tail) == -1) {
-        atom_unlock(q->lock);
+    atomic_flag_unlock(&q->lock);
         return 0;
     }
 
     cap = q->q->cap;
     head = q->q->head;
-    atom_unlock(q->lock);
+    atomic_flag_unlock(&q->lock);
 
     // 计算当前时间中内存队列的大小
     tail -= head - 1;

@@ -70,7 +70,7 @@ extern inline void r_init(int64_t seed) {
 
 inline int32_t 
 r_rand(void) {
-    return rand_rand(r_r);
+    return rand_get(r_r);
 }
 
 inline int64_t 

@@ -1,7 +1,7 @@
 #include "socket.h"
 
 int 
-socket_ntop(sockaddr_t a, char ip[INET6_ADDRSTRLEN]) {
+socket_ntop(const sockaddr_t a, char ip[INET6_ADDRSTRLEN]) {
     const char * res;
 
     if (a->s.sa_family == AF_INET || a->len == sizeof(a->s4)) {
@@ -28,10 +28,10 @@ int socket_pton(sockaddr_t a, int family, char ip[INET6_ADDRSTRLEN], uint16_t po
     int res;
     
     if (family == AF_INET) {
-        memset(a, 0, sizeof(a));
+        memset(a, 0, sizeof(sockaddr_t));
         res = inet_pton(AF_INET, ip, &a->s4.sin_addr);
         if (res == 1) {
-            a->s.sa_family == AF_INET;
+            a->s.sa_family = AF_INET;
             a->len = sizeof(a->s4);
             a->s4.sin_port = htons(port);
         }
@@ -39,11 +39,11 @@ int socket_pton(sockaddr_t a, int family, char ip[INET6_ADDRSTRLEN], uint16_t po
     }
 
     if (family == AF_INET6) {
-        memset(a, 0, sizeof(a));
+        memset(a, 0, sizeof(sockaddr_t));
         // 默认按照 ipv6 去处理
         res = inet_pton(AF_INET6, ip, &a->s6.sin6_addr);
         if (res == 1) {
-            a->s.sa_family == AF_INET6;
+            a->s.sa_family = AF_INET6;
             a->len = sizeof(a->s6);
             a->s6.sin6_port = htons(port);
         }
@@ -60,7 +60,7 @@ int socket_addr(sockaddr_t a, const char * host, uint16_t port, int family) {
     int res;
     char ports[sizeof "65535"];
 
-    res = socket_pton(a, family, host, port);
+    res = socket_pton(a, family, (char *)host, port);
     if (res == 1) {
         return 0;
     }
@@ -78,7 +78,7 @@ int socket_addr(sockaddr_t a, const char * host, uint16_t port, int family) {
         return -1;
     }
 
-    memset(a, 0, sizeof(a));
+    memset(a, 0, sizeof(sockaddr_t));
     // 尝试获取默认第一个
     memcpy(&a->s, rsp->ai_addr, rsp->ai_addrlen);
     a->len = rsp->ai_addrlen;
