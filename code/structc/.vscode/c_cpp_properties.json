@@ -4,7 +4,6 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceRoot}/modular/module",
                 "${workspaceRoot}/modular/struct",
                 "${workspaceRoot}/modular/system"
             ],

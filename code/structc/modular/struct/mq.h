@@ -29,7 +29,7 @@ inline void mq_delete(mq_t q, node_f fdie) {
 inline mq_t mq_create(void) {
     struct mq * q = malloc(sizeof(struct mq));
     q_init(q->q);
-    atomic_flag_clear(&q->lock);
+    q->lock = (atomic_flag)ATOMIC_FLAG_INIT;
     return q;
 }
 

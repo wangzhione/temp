@@ -15,7 +15,7 @@ ROOT      ?= ..
 #
 DMAIN     := main
 DTEST     := test
-DSRC      := core struct
+DSRC      := system struct
 DIRS      := $(DSRC) $(DTEST) $(DMAIN)
 
 #

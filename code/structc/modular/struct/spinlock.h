@@ -34,6 +34,7 @@ inline bool atomic_bool_compare_exchange_strong(volatile atomic_bool * obj) {
 }
 
 // spin lock
+
 inline void atomic_flag_lock(volatile atomic_flag * lock) {
     while (atomic_flag_test_and_set(lock)) {}
 }

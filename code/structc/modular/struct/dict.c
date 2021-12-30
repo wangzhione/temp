@@ -101,6 +101,13 @@ dict_create(void * fdie) {
     return d;
 }
 
+static unsigned SDBMHash(const char * k) {
+    register unsigned o,h = 0u;
+    while ((o = *k++))
+        h = o + h * 65599u;
+    return h;
+}
+
 //
 // dict_get - 获取字典中对映的 v
 // d        : dict_create 创建的字典对象
@@ -113,7 +120,7 @@ dict_get(dict_t d, const char * k) {
     struct keypair * pair;
     assert(d && k);
 
-    hash = str_hash(k);
+    hash = SDBMHash(k);
     index = hash % prime_table[d->idx][1];
     pair = d->table[index];
 
@@ -143,7 +150,7 @@ dict_set(dict_t d, const char * k, void * v) {
     dict_resize(d);
 
     // 开始寻找数据
-    hash = str_hash(k);
+    hash = SDBMHash(k);
     index = hash % prime_table[d->idx][1];
     pair = d->table[index];
     prev = NULL;

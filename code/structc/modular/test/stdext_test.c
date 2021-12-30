@@ -1,6 +1,7 @@
 ﻿#include <struct.h>
 #include <stdext.h>
 #include <system.h>
+#include <msg.h>
 
 PACKED(struct sdshdr5 {
     unsigned char flags; /* 3 lsb of type, and 5 msb of string length */

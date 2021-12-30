@@ -101,7 +101,7 @@ loop_create(void * frun, void * fdie) {
     p->wait = p->loop = true;
     // 初始化 POSIX 信号量, 进程内线程共享, 初始值 0
     sem_init(&p->block, 0, 0);
-    atomic_flag_clear(&p->lock);
+    p->lock = (atomic_flag)ATOMIC_FLAG_INIT;
     if (pthread_run(&p->id, loop_run, p)) {
         sem_destroy(&p->block);
         free(p->rq->data);

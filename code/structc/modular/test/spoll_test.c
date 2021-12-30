@@ -4,35 +4,36 @@ struct userdata {
     socket_t fd;
 };
 
-#define HOST_STR "127.0.0.1:8964"
-
 //
 // test socket poll 模型
 //
 void spoll_test(void) {
-    // 开始构建一个 socket
-    socket_t s = socket_tcp(HOST_STR);
-    if (INVALID_SOCKET == s)
-        RETNIL("socket_tcp is error!");
+    const char * host = "127.0.0.1";
+    uint16_t port = 8964;
 
-    poll_t p = s_create();
-    assert(!s_invalid(p));
+    // 开始构建一个 socket
+    socket_t s = socket_listen(host, port, SOMAXCONN);
+    if (INVALID_SOCKET == s)
+        RETNIL("socket_listen is error!");
+
+    poll_t p = spoll_create();
+    assert(!spoll_invalid(p));
 
     struct userdata user = { .fd = s };
-    if (s_add(p, s, &user))
-        CERR("sp_add sock = is error!");
+    if (spoll_add(p, s, &user))
+        CERR("spoll_add sock = is error!");
     else {
-        event_t e;
+        spoll_event_t e;
         // 开始等待数据
-        printf("sp_wait [%s] listen ... \n", HOST_STR);
-        int n = s_wait(p, e);
-        printf("sp_wait n = %d. 一切都有点点意外!\n", n);
+        printf("spoll_wait [%s:%hu] listen ... \n", host, port);
+        int n = spoll_wait(p, e);
+        printf("spoll_wait n = %d. 一切都有点点意外!\n", n);
 
         for (int i = 0; i < n; i++) {
             printf("i = %d, user = %p, u = %p\n", i, &user, e[i].u);
         }
     }
 
-    s_delete(p);
+    spoll_delete(p);
     socket_close(s);
 }

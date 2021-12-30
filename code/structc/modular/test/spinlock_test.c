@@ -54,7 +54,7 @@ extern void atomic_r_lock(struct rwlock * rw) {
 // atomic_w_unlock - unlock write lock
 extern void atomic_w_unlock(struct rwlock * rw) {
     assert(atomic_load(&rw->wlock));
-    atomic_fetch_sub(&rw->wlock, 1);
+    atomic_store(&rw->wlock, false);
 }
 
 // atomic_r_unlock - unlock read lock
@@ -70,7 +70,7 @@ extern bool atomic_r_trylock(struct rwlock * rw) {
     
     // 乐观的添加读计数
     atomic_fetch_add(&rw->rlock, 1);
-
+    
     if (atomic_load(&rw->wlock)) {
         // 还是有写, 收回刚添加的读计数
         atomic_fetch_sub(&rw->rlock, 1);
@@ -82,14 +82,22 @@ extern bool atomic_r_trylock(struct rwlock * rw) {
 
 // atomic_w_trylock - try add write lock
 extern bool atomic_w_trylock(struct rwlock * rw) {
-    // 尝试抢占写锁
-    if (atomic_bool_compare_exchange_strong(&rw->wlock)) {
-        if (atomic_load(&rw->rlock)) {
-            // 存在读锁, 释放写锁
-            atomic_store(&rw->wlock, false);
-            return false;
-        }
-        return true;
+    // 存在读锁, 直接返回
+    if (atomic_load(&rw->rlock)) {
+        return false;
     }
-    return false;
+
+    // 尝试抢占写锁
+    if (!atomic_bool_compare_exchange_strong(&rw->wlock)) {
+        return false;
+    }
+
+    // 存在读锁, 释放申请到写锁, 直接返回
+    if (atomic_load(&rw->rlock)) {
+        // 存在读锁, 释放写锁
+        atomic_store(&rw->wlock, false);
+        return false;
+    }
+
+    return true;
 }

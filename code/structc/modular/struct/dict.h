@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include "struct.h"
-#include "strext.h"
 
 //
 // dict_t - C 字符串为 key 的字典结构

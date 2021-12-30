@@ -1,4 +1,5 @@
 ﻿#include <dict.h>
+#include <strext.h>
 
 static void _str_die(void * node) {
     free(node);
