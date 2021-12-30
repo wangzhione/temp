@@ -1,5 +1,11 @@
 ﻿#include "md5.h"
 
+struct md5 {
+    uint8_t  in[64];      /* Input data */
+    uint32_t nl, nh;      /* Number of _bits_ handled mod 2^64 */
+    uint32_t a, b, c, d;  /* Scratch buffer a, b, c, d */
+};
+
 /* MD5_F, MD5_G and MD5_H are basic MD5 functions: selection, majority, parity */
 #define MD5_F(x, y, z) (((x) & (y)) | ((~x) & (z)))
 #define MD5_G(x, y, z) (((x) & (z)) | ((y) & (~z)))

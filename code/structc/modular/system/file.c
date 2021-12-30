@@ -40,7 +40,7 @@ static void f_s_add(const char * p, unsigned h, file_f func, void * arg) {
 // files get 
 static struct file * f_s_get(const char * p, unsigned * r) {
     struct file * fu = f_s.list;
-    unsigned h = *r = str_hash(p);
+    unsigned h = *r = BKDHash(p);
 
     while (fu) {
         if (fu->hash == h && strcmp(fu->path, p) == 0)

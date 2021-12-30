@@ -15,11 +15,11 @@
 #include "stdext.h"
 
 //
-// str_hash - Brian Kernighan 与 Dennis Ritchie hash 算法
+// BKDHash - Brian Kernighan 与 Dennis Ritchie hash 算法
 // str      : 字符串内容
 // return   : 返回计算后的 hash 值
 //
-extern unsigned str_hash(const char * str);
+extern unsigned BKDHash(const char * str);
 
 //
 // str_cpyn - tar 复制内容到 src 中

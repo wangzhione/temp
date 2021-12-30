@@ -147,8 +147,10 @@ inline void pthread_end(pthread_t id) {
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceRoot}/modular/main",
+                "${workspaceRoot}/modular/module",
                 "${workspaceRoot}/modular/struct",
-                "${workspaceRoot}/modular/core"
+                "${workspaceRoot}/modular/system"
             ],
             "defines": [
                 "_DEBUG",
@@ -168,6 +170,7 @@ inline void pthread_end(pthread_t id) {
 
 ```json
             "program": "${workspaceFolder}/bin/main.out",
+            ... .. .
             "preLaunchTask": "Debug",
 ```
 
@@ -176,9 +179,6 @@ inline void pthread_end(pthread_t id) {
 
 ```json
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
-    "version": "2.0.0",
     "tasks": [
         {
             "type"    : "shell",
@@ -190,7 +190,8 @@ inline void pthread_end(pthread_t id) {
             "label"   : "Release",
             "command" : "make D=-DNDEBUG"
         },
-    ]
+    ],
+    "version": "2.0.0"
 }
 ```
 
@@ -200,9 +201,6 @@ inline void pthread_end(pthread_t id) {
 {
     "files.associations": {
         "*.h": "c",
-        "cerrno": "c",
-        "atomic": "c",
-        "memory_resource": "c"
     }
 }
 ```

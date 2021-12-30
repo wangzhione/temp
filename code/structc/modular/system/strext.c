@@ -1,12 +1,7 @@
 ﻿#include "strext.h"
 
-//
-// str_hash - Brian Kernighan 与 Dennis Ritchie hash 算法
-// str      : 字符串内容
-// return   : 返回计算后的 hash 值
-//
-unsigned 
-str_hash(const char * str) {
+// 19 世纪 60 年代 Brian Kernighan 与 Dennis Ritchie hash 算法
+unsigned BKDHash(const char * str) {
     register unsigned u, h = 0;
     if (str) {
         while ((u = *str++))

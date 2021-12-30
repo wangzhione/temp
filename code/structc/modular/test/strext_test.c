@@ -16,7 +16,7 @@
 // strext_test - 测试 estring_test.h 中接口设计
 //
 void strext_test(void) {
-    unsigned hash = str_hash(STR(__func__)); 
+    unsigned hash = BKDHash(STR(__func__)); 
     printf("%s -> %u\n", STR(__func__), hash);
 
 	// 输出数据测试

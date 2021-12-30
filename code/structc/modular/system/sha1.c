@@ -1,5 +1,11 @@
 ﻿#include "sha1.h"
 
+struct sha1 {
+    uint8_t buffer[64];     // 64 byte * 8 = 512 bit 消息块
+    uint32_t state[ 5];     // 32 byte * 5 = 160 bit 消息摘要
+    uint32_t count[ 2];     // 消息 bit 级别的长度, 1 是高位
+};
+
 // rol 宏 让 val 循环左移 bits
 #define rol(val, bits) (((val) << (bits)) | ((val) >> (32 - (bits))))
 
