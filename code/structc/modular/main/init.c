@@ -1,5 +1,4 @@
 ﻿#include "base.h"
-#include "conf.h"
 #include "socket.h"
 
 //

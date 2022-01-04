@@ -25,7 +25,7 @@ void reuseport_test(void) {
 void 
 accept_example(int id) {
     // 构造 TCP socket
-    socket_t s = socket_stream();
+    socket_t s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     IF(s == INVALID_SOCKET);
 
     // 开启地址复用
@@ -34,7 +34,7 @@ accept_example(int id) {
     // 构造地址
     sockaddr_t addr = {{
         .s4 = { 
-            .sin_family = AF_INET, 
+            .sin_family = PF_INET, 
             .sin_port   = htons(PORT_UINT),
         },
         .len = sizeof(struct sockaddr_in)

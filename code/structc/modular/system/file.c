@@ -12,9 +12,8 @@ struct file {
 };
 
 static struct files {
-    atomic_flag lock;       // 当前对象原子锁
     struct file * list;     // 当前文件对象集
-} f_s = { ATOMIC_FLAG_INIT };
+} f_s;
 
 // files add 
 static void f_s_add(const char * p, unsigned h, file_f func, void * arg) {
@@ -31,10 +30,8 @@ static void f_s_add(const char * p, unsigned h, file_f func, void * arg) {
     fu->arg = arg;
 
     // 直接插入到头结点部分
-    atomic_flag_lock(&f_s.lock);
     fu->next = f_s.list;
     f_s.list = fu;
-    atomic_flag_unlock(&f_s.lock);
 }
 
 // files get 
@@ -66,11 +63,9 @@ file_set(const char * path, file_f func, void * arg) {
     if (!fu)
         f_s_add(path, h, func, arg);
     else {
-        atomic_flag_lock(&f_s.lock);
         fu->last = -1;
         fu->func = func;
         fu->arg = arg;
-        atomic_flag_unlock(&f_s.lock);
     }
 }
 
@@ -80,7 +75,6 @@ file_set(const char * path, file_f func, void * arg) {
 //
 void 
 file_update(void) {
-    atomic_flag_lock(&f_s.lock);
     struct file * fu = f_s.list;
     while (fu) {
         struct file * next = fu->next;
@@ -108,5 +102,4 @@ file_update(void) {
 
         fu = next;
     }
-    atomic_flag_lock(&f_s.lock);
 }

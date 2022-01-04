@@ -2,7 +2,6 @@
 
 #include "struct.h"
 #include "strext.h"
-#include "spinlock.h"
 
 //
 // file_f - 文件更新行为

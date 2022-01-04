@@ -4,16 +4,16 @@ int
 socket_ntop(const sockaddr_t a, char ip[INET6_ADDRSTRLEN]) {
     const char * res;
 
-    if (a->s.sa_family == AF_INET || a->len == sizeof(a->s4)) {
-        res = inet_ntop(AF_INET, &a->s4.sin_addr, ip, INET_ADDRSTRLEN);
+    if (a->s.sa_family == PF_INET || a->len == sizeof(a->s4)) {
+        res = inet_ntop(PF_INET, &a->s4.sin_addr, ip, INET_ADDRSTRLEN);
         if (res != NULL) {
             return ntohs(a->s4.sin_port); 
         }
         return -1;
     }
 
-    if (a->s.sa_family == AF_INET6 || a->len == sizeof(a->s6)) {
-        res = inet_ntop(AF_INET6, &a->s6.sin6_addr, ip, INET6_ADDRSTRLEN);
+    if (a->s.sa_family == PF_INET6 || a->len == sizeof(a->s6)) {
+        res = inet_ntop(PF_INET6, &a->s6.sin6_addr, ip, INET6_ADDRSTRLEN);
         if (res != NULL) {
             return ntohs(a->s6.sin6_port); 
         }
@@ -23,27 +23,27 @@ socket_ntop(const sockaddr_t a, char ip[INET6_ADDRSTRLEN]) {
     return -1;
 }
 
-// socket_pton - ip -> AF_INET a->s4.sin_addr or AF_INET6 a->s6.sin6_addr
+// socket_pton - ip -> PF_INET a->s4.sin_addr or PF_INET6 a->s6.sin6_addr
 int socket_pton(sockaddr_t a, int family, char ip[INET6_ADDRSTRLEN], uint16_t port) {
     int res;
     
-    if (family == AF_INET) {
+    if (family == PF_INET) {
         memset(a, 0, sizeof(sockaddr_t));
-        res = inet_pton(AF_INET, ip, &a->s4.sin_addr);
+        res = inet_pton(PF_INET, ip, &a->s4.sin_addr);
         if (res == 1) {
-            a->s.sa_family = AF_INET;
+            a->s.sa_family = PF_INET;
             a->len = sizeof(a->s4);
             a->s4.sin_port = htons(port);
         }
         return res;
     }
 
-    if (family == AF_INET6) {
+    if (family == 0 || family == PF_INET6 || family == PF_UNSPEC) {
         memset(a, 0, sizeof(sockaddr_t));
         // 默认按照 ipv6 去处理
-        res = inet_pton(AF_INET6, ip, &a->s6.sin6_addr);
+        res = inet_pton(PF_INET6, ip, &a->s6.sin6_addr);
         if (res == 1) {
-            a->s.sa_family = AF_INET6;
+            a->s.sa_family = PF_INET6;
             a->len = sizeof(a->s6);
             a->s6.sin6_port = htons(port);
         }
@@ -53,7 +53,39 @@ int socket_pton(sockaddr_t a, int family, char ip[INET6_ADDRSTRLEN], uint16_t po
     return -1;
 }
 
-// socket_addr - 通过 family AF_INET or AF_INET6, ip, port 构造 ip sock addr 结构
+socket_t socket_sockaddr_stream(sockaddr_t a, int family) {
+    socket_t s;
+    assert(family == PF_INET || family == 0 || family == PF_INET6 || family == PF_UNSPEC);
+    
+    if (family == PF_INET) {
+        s = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (s == INVALID_SOCKET) {
+            return INVALID_SOCKET;
+        }
+        
+        memset(a, 0, sizeof(struct sockaddr_in6));
+        a->s.sa_family = PF_INET;
+        a->len = sizeof(struct sockaddr_in);
+        return s;
+    }
+
+    if (family == 0 || family == PF_INET6 || family == PF_UNSPEC) { 
+        s = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
+        if (s == INVALID_SOCKET) {
+            return INVALID_SOCKET;
+        }
+        
+        // 默认走 :: in6addr_any 默认地址
+        memset(a, 0, sizeof(struct sockaddr_in6));
+        a->s.sa_family = PF_INET6;
+        a->len = sizeof(struct sockaddr_in6);
+        return s;
+    }
+
+    return INVALID_SOCKET;
+}
+
+// socket_addr - 通过 family PF_INET or PF_INET6, ip, port 构造 ip sock addr 结构
 //               return -1 is error
 //               host is char ip[INET6_ADDRSTRLEN] or node host name
 int socket_addr(sockaddr_t a, const char * host, uint16_t port, int family) {
@@ -96,10 +128,10 @@ socket_binds(const char * host, uint16_t port, uint8_t protocol, int * family) {
         .ai_socktype = protocol == IPPROTO_TCP ? SOCK_STREAM : SOCK_DGRAM,
         .ai_protocol = protocol,
     };
-    if (family != NULL && (*family == AF_INET || *family == AF_INET6)) {
+    if (family != NULL && (*family == PF_INET || *family == PF_INET6)) {
         req.ai_family = *family;
     } else {
-        req.ai_family = AF_UNSPEC;
+        req.ai_family = PF_UNSPEC;
     }
 
     sprintf(ports, "%hu", port);
@@ -216,7 +248,7 @@ static int socket_connect_timeout_partial(socket_t s, const sockaddr_t a, int ms
 socket_t 
 socket_connect_timeout(const sockaddr_t a, int ms) {
     // 获取 tcp socket 尝试 parse connect
-    socket_t s = socket_stream();
+    socket_t s = socket(a->s.sa_family, SOCK_STREAM, IPPROTO_TCP);
     if (s != INVALID_SOCKET) {
         if (socket_connect_timeout_partial(s, a, ms) >= 0) {
             if (socket_set_block(s) >= 0)
@@ -234,7 +266,7 @@ socket_connect_timeout(const sockaddr_t a, int ms) {
 
 socket_t 
 socket_connect(const sockaddr_t a) {
-    socket_t s = socket_stream();
+    socket_t s = socket(a->s.sa_family, SOCK_STREAM, IPPROTO_TCP);
     if (s != INVALID_SOCKET) {
         if (connect(s, &a->s, a->len) >= 0) {
             return s;

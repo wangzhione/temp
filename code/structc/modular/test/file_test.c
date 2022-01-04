@@ -36,7 +36,7 @@ void file_test(void) {
     // 开始注册一个
     file_set(CONF_STR, conf_update, NULL);
 
-    // 定时刷新, 凡事追求 61分.
+    // 定时刷新, 不要凡事追求 61分. 把心投入到喜欢的事物上.
     for (int i = 0; i < 61; ++i) {
         puts("conf start");
         file_update();

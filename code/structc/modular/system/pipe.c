@@ -31,15 +31,13 @@ pipe_send(pipe_t ch, const void * buf, int sz) {
 // pipefd   : 索引 0 表示 recv fd, 1 是 send fd
 // return   : 0 is success -1 is error returned
 //
-int 
-pipe(socket_t pipefd[2]) {
+int pipe_socket(socket_t pipefd[2]) {
     sockaddr_t name;
-    socket_t s = socket_stream();
+    socket_t s = socket_sockaddr_stream(name, PF_INET6);
     if (s == INVALID_SOCKET)
         return -1;
 
-    sockaddr_init(name, AF_INET6);
-    if (bind(s, &name->s, name->len))
+    if (bind(s, &name->s, name->len)) 
         goto err_close;
 
     if (listen(s, 1))

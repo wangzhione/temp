@@ -125,16 +125,6 @@ inline int socket_send(socket_t s, const void * buf, int sz) {
     return (int)send(s, buf, sz, 0);
 }
 
-// socket_dgram - 创建 UDP socket
-inline socket_t socket_dgram(void) {
-    return socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-}
-
-// socket_stream - 创建 TCP socket
-inline socket_t socket_stream(void) {
-    return socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-}
-
 inline int socket_set_enable(socket_t s, int optname) {
     int ov = 1;
     return setsockopt(s, SOL_SOCKET, optname, (void *)&ov, sizeof ov);
@@ -183,9 +173,9 @@ typedef struct {
     union {
         struct sockaddr s;
         //
-        // s4->sin_family = AF_INET
+        // s4->sin_family = PF_INET
         // s4->sin_port = htons(9527)
-        // inet_pton(AF_INET, "189.164.0.1", &s4->sin_addr) == 1 => success
+        // inet_pton(PF_INET, "189.164.0.1", &s4->sin_addr) == 1 => success
         //
         struct sockaddr_in s4;
         struct sockaddr_in6 s6;
@@ -194,14 +184,19 @@ typedef struct {
     socklen_t len;
 } sockaddr_t[1];
 
-inline void sockaddr_init(sockaddr_t a, int family) {
-    assert(family == AF_INET || family == AF_INET6);
-    memset(a, 0, sizeof(sockaddr_t));
-    a->s.sa_family = family;
-    a->len = family == AF_INET ? sizeof(a->s4) : sizeof(a->s6);
-}
+//
+// socket create 
+// socket_t s; 
+//
+// socket(PF_INET , SOCK_DGRAM , IPPROTO_UDP)
+// socket(PF_INET6, SOCK_DGRAM , IPPROTO_UDP)
+// socket(PF_INET , SOCK_STREAM, IPPROTO_TCP)
+// socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP)
+// 
 
-extern int socket_addr(sockaddr_t a, const char * host, uint16_t port, int family);
+extern socket_t socket_sockaddr_stream(sockaddr_t a, int family);
+
+extern int socket_sockaddr(sockaddr_t a, const char * host, uint16_t port, int family);
 
 // socket_getsockname - 获取 socket 的本地地址
 inline int socket_getsockname(socket_t s, sockaddr_t name) {
@@ -216,7 +211,7 @@ inline int socket_getpeername(socket_t s, sockaddr_t name) {
 // socket_ntop - sin_addr or sin6_addr -> ip 串, return -1 error or port
 extern int socket_ntop(const sockaddr_t a, char ip[INET6_ADDRSTRLEN]);
 
-// socket_bind - 返回绑定好端口的 socket fd, family return AF_INET AF_INET6
+// socket_bind - 返回绑定好端口的 socket fd, family return PF_INET PF_INET6
 extern socket_t socket_binds(const char * host, uint16_t port, uint8_t protocol, int * family);
 
 // socket_listen - 返回监听好的 socket fd
@@ -256,7 +251,7 @@ extern socket_t socket_connect_timeout(const sockaddr_t a, int ms);
 
 extern socket_t socket_connect(const sockaddr_t a);
 
-inline int socket_accept(socket_t s, sockaddr_t a) {
+inline socket_t socket_accept(socket_t s, sockaddr_t a) {
     a->len = sizeof(struct sockaddr_in6);
     return accept(s, &a->s, &a->len);
 }

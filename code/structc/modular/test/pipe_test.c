@@ -27,3 +27,59 @@ void pipe_test(void) {
 
     socket_close(fd[0]); socket_close(fd[1]);
 }
+
+//
+// pipe - 移植 linux 函数, 通过 WinSock 实现
+// pipefd   : 索引 0 表示 recv fd, 1 是 send fd
+// return   : 0 is success -1 is error returned
+//
+int pipe_socket(socket_t pipefd[2]) {
+    sockaddr_t name;
+    socket_t s = socket_sockaddr_stream(name, PF_INET6);
+    if (s == INVALID_SOCKET)
+        return -1;
+
+    if (bind(s, &name->s, name->len)) 
+        goto err_close;
+
+    if (listen(s, 1))
+        goto err_close;
+
+    // 得到绑定端口和本地地址
+    if (socket_getsockname(s, name))
+        goto err_close;
+
+    // 开始构建互相通信的 socket
+    pipefd[0] = socket_connect(name);
+    if (pipefd[0] == INVALID_SOCKET)
+        goto err_close;
+
+    // 通过 accept 通信避免一些意外
+    pipefd[1] = socket_accept(s, name);
+    if (pipefd[1] == INVALID_SOCKET) 
+        goto err_pipe;
+
+    socket_close(s);
+    return 0;
+err_pipe:
+    socket_close(pipefd[0]);
+err_close:
+    socket_close(s);
+    return -1;
+}
+
+void pipe_socket_test(void) {
+    int r;
+    socket_t pipefd[2];
+    IF(pipe_socket(pipefd));
+
+    char data[] = "君子和而不同, I support 自由.";
+
+    r = socket_send(pipefd[1], data, sizeof data);
+    printf("r = %2d, data = %s\n", r, data);
+    r = socket_recv(pipefd[0], data, sizeof data);
+    printf("r = %2d, data = %s\n", r, data);
+
+    socket_close(pipefd[0]); 
+    socket_close(pipefd[1]);
+}

@@ -1,5 +1,4 @@
 ﻿#include "base.h"
-#include "conf.h"
 
 //
 // exec     - 执行业务 🐖🐍🐉
