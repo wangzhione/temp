@@ -131,7 +131,7 @@ getawd(char * buf, size_t size) {
 
 # ifndef getawe
 #   if defined(_WIN32) && defined(_MSC_VER)
-#     define getawe(b, s)    (int)GetModuleFileName(NULL, b, (DWORD)s);
+#     define getawe(b, s)    (int)GetModuleFileNameA(NULL, b, (DWORD)s);
 #   else
 #     define getawe(b, s)    (int)readlink("/proc/self/exe", b, s);
 #   endif

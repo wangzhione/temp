@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <time.h>
 #include <fcntl.h>
@@ -173,9 +173,9 @@ typedef struct {
     union {
         struct sockaddr s;
         //
-        // s4->sin_family = PF_INET
+        // s4->sin_family = AF_INET
         // s4->sin_port = htons(9527)
-        // inet_pton(PF_INET, "189.164.0.1", &s4->sin_addr) == 1 => success
+        // inet_pton(AF_INET, "189.164.0.1", &s4->sin_addr) == 1 => success
         //
         struct sockaddr_in s4;
         struct sockaddr_in6 s6;
@@ -188,10 +188,10 @@ typedef struct {
 // socket create 
 // socket_t s; 
 //
-// socket(PF_INET , SOCK_DGRAM , IPPROTO_UDP)
-// socket(PF_INET6, SOCK_DGRAM , IPPROTO_UDP)
-// socket(PF_INET , SOCK_STREAM, IPPROTO_TCP)
-// socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP)
+// socket(AF_INET , SOCK_DGRAM , IPPROTO_UDP)
+// socket(AF_INET6, SOCK_DGRAM , IPPROTO_UDP)
+// socket(AF_INET , SOCK_STREAM, IPPROTO_TCP)
+// socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP)
 // 
 
 extern socket_t socket_sockaddr_stream(sockaddr_t a, int family);
@@ -211,7 +211,7 @@ inline int socket_getpeername(socket_t s, sockaddr_t name) {
 // socket_ntop - sin_addr or sin6_addr -> ip 串, return -1 error or port
 extern int socket_ntop(const sockaddr_t a, char ip[INET6_ADDRSTRLEN]);
 
-// socket_bind - 返回绑定好端口的 socket fd, family return PF_INET PF_INET6
+// socket_bind - 返回绑定好端口的 socket fd, family return AF_INET AF_INET6
 extern socket_t socket_binds(const char * host, uint16_t port, uint8_t protocol, int * family);
 
 // socket_listen - 返回监听好的 socket fd

@@ -60,12 +60,12 @@ RUN       = $(HEAD) $(IINC) -o $(DOUT)/$@ $^ $(LIB)
 #
 .PHONY : all clean
 
-all : main.out
+all : main.exe
 
 #
 # 主运行程序main
 #
-main.out : $(OBJO)
+main.exe : $(OBJO)
 	$(RUN)
 
 

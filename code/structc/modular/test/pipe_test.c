@@ -35,7 +35,7 @@ void pipe_test(void) {
 //
 int pipe_socket(socket_t pipefd[2]) {
     sockaddr_t name;
-    socket_t s = socket_sockaddr_stream(name, PF_INET6);
+    socket_t s = socket_sockaddr_stream(name, AF_INET6);
     if (s == INVALID_SOCKET)
         return -1;
 

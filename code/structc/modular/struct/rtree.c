@@ -35,7 +35,7 @@ inline rtree_t
 rtree_create(void * fcmp, void * fdie) {
     rtree_t tree = malloc(sizeof *tree);
     tree->root = NULL;
-    tree->fcmp = fcmp ? fcmp : rtree_cmp_default;
+    tree->fcmp = fcmp ? fcmp : (void *)rtree_cmp_default;
     tree->fdie = fdie;
     return tree;
 }

@@ -13,7 +13,7 @@ struct fds {
     socket_t fd;
 };
 
-struct poll {
+struct spoll {
     fd_set fdr;
     fd_set fdw;
     fd_set fde;
@@ -21,19 +21,19 @@ struct poll {
     struct fds s[FD_SETSIZE];
 };
 
-inline poll_t spoll_create(void) {
-    return calloc(1, sizeof(struct poll));
+inline spoll_t spoll_create(void) {
+    return calloc(1, sizeof(struct spoll));
 }
 
-inline bool spoll_invalid(poll_t p) {
+inline bool spoll_invalid(spoll_t p) {
     return !p;
 }
 
-inline void spoll_delete(poll_t p) {
+inline void spoll_delete(spoll_t p) {
     free(p);
 }
 
-void spoll_del(poll_t p, socket_t s) {
+void spoll_del(spoll_t p, socket_t s) {
     struct fds * begin = p->s, * end = p->s + p->len;
     while (begin < end) {
         if (begin->fd == s) {
@@ -48,7 +48,7 @@ void spoll_del(poll_t p, socket_t s) {
     }
 }
 
-bool spoll_add(poll_t p, socket_t s, void * u) {
+bool spoll_add(spoll_t p, socket_t s, void * u) {
     struct fds * begin, * end;
     if (p->len >= FD_SETSIZE)
         return true;
@@ -70,7 +70,7 @@ bool spoll_add(poll_t p, socket_t s, void * u) {
     return false;
 }
 
-void spoll_write(poll_t p, socket_t s, void * u, bool enable) {
+void spoll_write(spoll_t p, socket_t s, void * u, bool enable) {
     struct fds * begin = p->s, * end = p->s + p->len;
     while (begin < end) {
         if (begin->fd == s) {
@@ -82,7 +82,7 @@ void spoll_write(poll_t p, socket_t s, void * u, bool enable) {
     }
 }
 
-int spoll_wait(poll_t p, event_t e) {
+int spoll_wait(spoll_t p, spoll_event_t e) {
     socket_t fd;
     struct fds * s;
     int c, r, i, n, len = p->len;

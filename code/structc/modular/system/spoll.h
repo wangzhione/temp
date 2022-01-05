@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "socket.h"
 
@@ -12,17 +12,15 @@ struct spoll_event {
     bool eof;
 };
 
+// poll 模型对象
 #if defined(__linux__) && defined(__GNUC__)
-typedef int           poll_t;
+typedef int            spoll_t;
 #elif defined(_WIN32) && defined(_MSC_VER)
-typedef struct poll * poll_t;
+typedef struct spoll * spoll_t;
 #endif
 
 // poll 模型 event 事件集
 typedef struct spoll_event spoll_event_t[MAX_EVENT];
-
-// poll 模型对象
-typedef int           spoll_t;
 
 //
 // spoll_create   - 创建 poll 对象

@@ -16,6 +16,15 @@ void init(void) {
     // Now 'timezome' global is populated. Obtain timezone and daylight info. 
     tzset();
 
+# if defined(_WIN32) && defined(_MSC_VER)
+    // 手动设置 window console 编码为 UTF-8
+    // 65001    UTF-8 代码页
+    // 950      繁体中文
+    // 936      简体中文 默认 GBK
+    // 437      MS DOS 美国英语
+    system("chcp 65001");
+# endif
+
     char path[BUFSIZ];
     // 一切皆有可能 🙂
     size_t n = getawd(path, LEN(path));

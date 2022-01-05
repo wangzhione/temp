@@ -31,9 +31,9 @@ pipe_send(pipe_t ch, const void * buf, int sz) {
 // pipefd   : 索引 0 表示 recv fd, 1 是 send fd
 // return   : 0 is success -1 is error returned
 //
-int pipe_socket(socket_t pipefd[2]) {
+int pipe(socket_t pipefd[2]) {
     sockaddr_t name;
-    socket_t s = socket_sockaddr_stream(name, PF_INET6);
+    socket_t s = socket_sockaddr_stream(name, AF_INET6);
     if (s == INVALID_SOCKET)
         return -1;
 

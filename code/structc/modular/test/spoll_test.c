@@ -16,7 +16,7 @@ void spoll_test(void) {
     if (INVALID_SOCKET == s)
         RETNIL("socket_listen is error!");
 
-    poll_t p = spoll_create();
+    spoll_t p = spoll_create();
     assert(!spoll_invalid(p));
 
     struct userdata user = { .fd = s };

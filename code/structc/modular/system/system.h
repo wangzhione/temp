@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //
 // 辽阔的夜, 黝黑而深邃 ~
