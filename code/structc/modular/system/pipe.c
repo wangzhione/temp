@@ -37,6 +37,9 @@ int pipe(socket_t pipefd[2]) {
     if (s == INVALID_SOCKET)
         return -1;
 
+    // 绑定默认网卡, 多平台上更容易 connect success
+    name->s6.sin6_addr = in6addr_loopback;
+
     if (bind(s, &name->s, name->len)) 
         goto err_close;
 

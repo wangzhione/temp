@@ -38,7 +38,10 @@ int pipe_socket(socket_t pipefd[2]) {
     socket_t s = socket_sockaddr_stream(name, AF_INET6);
     if (s == INVALID_SOCKET)
         return -1;
-
+    
+    // 绑定默认网卡, 多平台上更容易 connect success
+    name->s6.sin6_addr = in6addr_loopback;
+    
     if (bind(s, &name->s, name->len)) 
         goto err_close;
 
@@ -66,6 +69,39 @@ err_pipe:
 err_close:
     socket_close(s);
     return -1;
+}
+
+int pipe2(socket_t pipefd[2]) {
+    socket_t s;
+    sockaddr_t name = { {.s = { AF_INET }, .len = sizeof(struct sockaddr_in) } };
+    socklen_t nlen = name->len;
+    name->s4.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    // 开启一个固定 socket
+    if ((s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
+        return -1;
+
+    if (bind(s, &name->s, nlen))
+        return socket_close(s), -1;
+    if (listen(s, 1))
+        return socket_close(s), -1;
+
+    // 得到绑定的数据
+    if (getsockname(s, &name->s, &nlen))
+        return socket_close(s), -1;
+
+    // 开始构建互相通信的socket
+    if ((pipefd[0] = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == INVALID_SOCKET)
+        return socket_close(s), -1;
+
+    if (connect(pipefd[0], &name->s, nlen))
+        return socket_close(s), -1;
+
+    // 可以继续添加, 通信协议来避免一些意外
+    if ((pipefd[1] = accept(s, &name->s, &nlen)) == INVALID_SOCKET)
+        return socket_close(pipefd[0]), socket_close(s), -1;
+
+    return socket_close(s), 0;
 }
 
 void pipe_socket_test(void) {
