@@ -71,7 +71,7 @@ err_close:
     return -1;
 }
 
-int pipe2(socket_t pipefd[2]) {
+int pipe3(socket_t pipefd[2]) {
     socket_t s;
     sockaddr_t name = { {.s = { AF_INET }, .len = sizeof(struct sockaddr_in) } };
     socklen_t nlen = name->len;
