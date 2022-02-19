@@ -136,6 +136,48 @@ struct tree * tree_list(struct tree * root) {
     return root;
 }
 
+static void tree_list_non_recursive_partial(struct tree * root, struct stack * s) {
+    struct tree * node;
+    struct tree * prev = NULL;
+
+    do {
+        // 找到最左结点
+        while (root) {
+            stack_push(s, root);
+            root = root->left;
+        }
+
+        // 根结点处理
+        node = stack_pop_top(s);
+        node->left = prev;
+        if (prev) {
+            prev->right = node;
+        }
+        prev = node;
+
+        // 切换到右子树处理
+        root = node->right;
+    } while (!stack_empty(s) || root != NULL);
+}
+
+struct tree * tree_list_non_recursive(struct tree * root) {
+    if (root == NULL || (root->left == NULL && root->right == NULL)) {
+        return root;
+    }
+
+    struct stack s; stack_init(&s);
+
+    tree_list_non_recursive_partial(root, &s);
+
+    stack_free(&s);
+
+    while (root->left) {
+        root = root->left;
+    }
+
+    return root;
+}
+
 //
 // build: gcc -g -O3 -Wall -Wextra -Werror -o 02_tree2list 02_tree2list.c
 //
@@ -151,6 +193,19 @@ int main(void) {
     root = tree_create();
 
     root = tree_list(root);
+
+    printf(" inorder  : ");
+    while (root) {
+        struct tree * next = root->right;
+        tree_print(root);
+        tree_free(root);
+        root = next;
+    }
+    printf("\n");
+
+    root = tree_create();
+
+    root = tree_list_non_recursive(root);
 
     printf(" inorder  : ");
     while (root) {
