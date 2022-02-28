@@ -19,14 +19,14 @@ struct stack {
 // return   : void
 //
 #define INT_STACK   (1 << 8)
-static inline void stack_init(struct stack * s) {
+inline void stack_init(struct stack * s) {
     assert(s && INT_STACK > 0);
     s->tail = -1;
     s->cap  = INT_STACK;
     s->data = malloc(sizeof(void *) * INT_STACK);
 }
 
-static inline void stack_free(struct stack * s) {
+inline void stack_free(struct stack * s) {
     free(s->data);
 }
 
@@ -36,7 +36,7 @@ static inline void stack_free(struct stack * s) {
 // fdie     : node_f push 结点删除行为
 // return   : void
 //
-static inline void stack_delete(struct stack * s, node_f fdie) {
+inline void stack_delete(struct stack * s, node_f fdie) {
     if (s) {
         if (fdie) {
             while (s->tail >= 0)
@@ -51,8 +51,12 @@ static inline void stack_delete(struct stack * s, node_f fdie) {
 // s        : stack 对象栈
 // return   : true 表示 empty
 //
-static inline bool stack_empty(struct stack * s) {
+inline bool stack_empty(struct stack * s) {
     return s->tail <  0;
+}
+
+inline bool stack_exist(struct stack * s) {
+    return s->tail >= 0;
 }
 
 //
@@ -60,7 +64,7 @@ static inline bool stack_empty(struct stack * s) {
 // s        : stack 对象栈
 // return   : 栈顶对象
 //
-static inline void * stack_top(struct stack * s) {
+inline void * stack_top(struct stack * s) {
     return s->tail >= 0 ? s->data[s->tail] : NULL;
 }
 
@@ -69,7 +73,7 @@ static inline void * stack_top(struct stack * s) {
 // s        : stack 对象栈
 // return   : void
 //
-static inline void stack_pop(struct stack * s) {
+inline void stack_pop(struct stack * s) {
     if (s->tail >= 0) --s->tail;
 }
 
@@ -78,7 +82,7 @@ static inline void stack_pop(struct stack * s) {
 // s        : stack 对象栈
 // return   : 弹出的栈顶对象
 //
-static inline void * stack_pop_top(struct stack * s) {
+inline void * stack_pop_top(struct stack * s) {
     return s->tail >= 0 ? s->data[s->tail--] : NULL;
 }
 
@@ -88,7 +92,7 @@ static inline void * stack_pop_top(struct stack * s) {
 // m        : 待压入的对象
 // return   : void
 // 
-static inline void stack_push(struct stack * s, void * m) {
+inline void stack_push(struct stack * s, void * m) {
     if (s->cap <= s->tail) {
         s->cap <<= 1;
         s->data = realloc(s->data, sizeof(void *) * s->cap);
