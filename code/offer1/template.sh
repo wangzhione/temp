@@ -17,6 +17,6 @@ then
     exit 0
 fi
 
-readonly template_file=template.study.c
+readonly template_file=template.c
 
 sed "s/{name}/${name}/g" ${template_file} > ${file}
