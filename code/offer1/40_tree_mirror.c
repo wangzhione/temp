@@ -43,7 +43,7 @@ void tree_mirror_image_non_recursive(struct tree * root) {
 
     stack_push(&s, root);
     do {
-        struct tree * node = stack_pop_top(&s);
+        struct tree * node = stack_pop(&s);
         struct tree * temp = node->left;
         node->left = node->right;
         node->right = temp;
@@ -74,7 +74,7 @@ void tree_inorder(struct tree * root) {
             root = root->left;
         }
 
-        root = stack_pop_top(&s);
+        root = stack_pop(&s);
         printf(" %d", root->value);
 
         root = root->right;

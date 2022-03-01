@@ -8,9 +8,9 @@
 #include <string.h>
 #include <stdbool.h>
 
-/*
- 描述: 
+/* describe : 
 
+   
  */
 
 // build:

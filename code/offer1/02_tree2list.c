@@ -84,7 +84,7 @@ void tree_delete(struct tree * root) {
             // 打印计数
             tree_print(pre);
 
-            stack_pop(&s);
+            stack_popped(&s);
             tree_free(cur);
         } else {
             if (cur->right) {
@@ -148,7 +148,7 @@ static void tree_list_non_recursive_partial(struct tree * root, struct stack * s
         }
 
         // 根结点处理
-        node = stack_pop_top(s);
+        node = stack_pop(s);
         node->left = prev;
         if (prev) {
             prev->right = node;

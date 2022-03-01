@@ -25,7 +25,7 @@ void queue_push(struct queue * q, void * m) {
 
 void * queue_pop(struct queue * q) {
     if (!stack_empty(&q->sb)) {
-        return stack_pop_top(&q->sb);
+        return stack_pop(&q->sb);
     }
 
     // sb is empty, sa -> sb
@@ -34,9 +34,9 @@ void * queue_pop(struct queue * q) {
         return NULL;
     }
     do {
-        stack_push(&q->sb, stack_pop_top(&q->sa));
+        stack_push(&q->sb, stack_pop(&q->sa));
     } while (!stack_empty(&q->sa));
-    return stack_pop_top(&q->sb);
+    return stack_pop(&q->sb);
 }
 
 // build:

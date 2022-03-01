@@ -21,7 +21,7 @@ void tree_inorder(struct tree * root) {
             root = root->left;
         }
 
-        root = stack_pop_top(&s);
+        root = stack_pop(&s);
         printf(" %d", root->value);
 
         root = root->right;

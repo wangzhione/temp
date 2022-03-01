@@ -11,6 +11,13 @@ fi
 name=$1
 file=${name}.c
 
+#
+# 1. 用户输入文件名, 我们尝试创建文件
+#
+# ${file##.} -> 后缀名 suffix
+# ${file%%.} -> 文件名称
+#
+
 if [[ -a ${file} ]]
 then
     echo "${file} exists"
