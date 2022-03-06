@@ -38,7 +38,6 @@ void dice_print(int n) {
     
     // a[0] 和 a[1] 会交替迭代
     int a[2][DICE_INT * n + 1];
-    memset(a, 0, sizeof a);
 
     int index = 0;
 
@@ -57,6 +56,11 @@ void dice_print(int n) {
 
         int left = j - 1;
         int right = (j - 1) * DICE_INT;
+
+        // fix clear
+        for (i = left; i <= right + DICE_INT; i++) {
+            a[now][i] = 0;
+        }
 
         for (i = left; i <= right; i++) {
             for (int k = 1; k <= DICE_INT; k++) {
@@ -78,5 +82,6 @@ int main(void) {
     dice_print(0);
     dice_print(1);
     dice_print(2);
+    dice_print(3);
     exit(EXIT_SUCCESS);
 }
