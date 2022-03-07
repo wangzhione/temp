@@ -75,7 +75,7 @@ void dice_print(int n) {
 }
 
 // build:
-// gcc -g -O3 -Wall -Wextra -Werror -o 64_array_dice 64_array_dice.c
+// gcc -g -O3 -Wall -Wextra -Werror -o 65_array_dice 65_array_dice.c
 //
 int main(void) {
     dice_print(-1);
