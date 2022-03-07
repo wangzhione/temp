@@ -19,7 +19,7 @@ int str2int(const char * str, int * res) {
         return NUMBER_SUCCESS;
     }
 
-    long num = 0;
+    long long num = 0;
     int minus = 0; // 1 标识负数
     if (*str == '+' || *str == '-') {
         minus = *str++ == '-' ? 1 : 0;

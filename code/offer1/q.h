@@ -18,7 +18,7 @@ typedef struct q {
 // q      : 队列对象
 // return : void
 // Q_INT  - 队列初始大小, 必须是 2 的幂
-#define Q_INT     (1<< 6)
+#define Q_INT     (1<< 5)
 inline void q_init(q_t q) {
     q->data = malloc(sizeof(void *) * Q_INT);
     q->cap = Q_INT;
@@ -38,6 +38,12 @@ inline bool q_exist(q_t q) {
     return q->tail >= 0;
 }
 
+static inline int q_len(q_t q) {
+    return q->tail < 0 ? 0 :( 
+     q->tail >= q->head ? q->tail-q->head+1 : q->tail-q->head+1+q->cap
+    );
+}
+
 //
 // q_swap - q swap
 // r      : q one
@@ -50,6 +56,8 @@ inline void q_swap(q_t r, q_t w) {
     r[0] = w[0];
     w[0] = q[0];
 }
+
+extern int q_len(q_t q);
 
 //
 // q_pop - 队列中弹出消息数据
