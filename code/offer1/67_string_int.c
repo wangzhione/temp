@@ -30,7 +30,7 @@ int32_t str2int32(const char * str, int32_t * res) {
 
     // int32_t	int	Signed	32	4	-2,147,483,648	2,147,483,647
     // + - 1 字节, 后面 max size = 10
-    // 如果 max size = 10, 那么 max size 的时候最大值为 2,147,483,64
+    // 如果 max size = 10, 那么 max size = 9 的时候最大值为 2,147,483,64
 
     int32_t num = 0;
     bool minus = false; // 标识负数
@@ -87,7 +87,7 @@ int main(void) {
     str = NULL;
     code = str2int32(str, &num);
     printf("code = %d, str = %s, num = %d\n", code, str, num);
-    assert(code == NUMBER_INVALID && num == 0);
+    assert(code == NUMBER_SUCCESS && num == 0);
 
     num = 0;
     str = "-1";
