@@ -1,6 +1,4 @@
 #include <stdio.h>
-#include <errno.h>
-#include <wchar.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -18,7 +16,7 @@
 #define NUMBER_INVALID -2    // 非法字符
 #define NUMBER_BORDER  -3    // 数值越界
 
-int32_t str2int32(const char * str, int32_t * res) {
+int str2int32(const char * str, int32_t * res) {
     if (str == NULL) {
         return NUMBER_INVALID;
     }
@@ -80,14 +78,14 @@ int32_t str2int32(const char * str, int32_t * res) {
 //
 int main(void) {
     int code;
-    int num;
+    int32_t num;
     const char * str;
 
     num = 0;
     str = NULL;
     code = str2int32(str, &num);
     printf("code = %d, str = %s, num = %d\n", code, str, num);
-    assert(code == NUMBER_SUCCESS && num == 0);
+    assert(code == NUMBER_INVALID && num == 0);
 
     num = 0;
     str = "-1";
@@ -105,13 +103,13 @@ int main(void) {
     str = "2147483647";
     code = str2int32(str, &num);
     printf("code = %d, str = %s, num = %d\n", code, str, num);
-    assert(code == NUMBER_SUCCESS);
+    assert(code == NUMBER_SUCCESS && num == 2147483647);
 
     num = 0;
     str = "-2147483648";
     code = str2int32(str, &num);
     printf("code = %d, str = %s, num = %d\n", code, str, num);
-    assert(code == NUMBER_SUCCESS);
+    assert(code == NUMBER_SUCCESS && num == -2147483648);
 
     num = 0;
     str = "-2147483649";
