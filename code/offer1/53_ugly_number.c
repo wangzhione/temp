@@ -43,6 +43,7 @@ int GetUglyNumber(int index) {
 }
 
 static int ugly_min(int a, int b, int c) {
+    printf("别这样2 a = %d, b = %d, c = %d\n", a, b, c);
     if (a < b) {
         return a < c ? a : c;
     }
@@ -59,7 +60,8 @@ int GetUglyNumberOptimize(int index) {
     }
 
     // 丑数数组
-    int * ugly = malloc(index * sizeof(int));
+    int * ugly = calloc(index,  sizeof(int));
+    printf("别这样1 index = %d\n", index);
     *ugly = 1;
 
     // 下一个丑数位置
@@ -70,8 +72,12 @@ int GetUglyNumberOptimize(int index) {
     int * ugly_t3 = ugly;
     int * ugly_t5 = ugly;
 
+    int min = 1;
     while (++next - ugly < index) {
-        int min = ugly_min(*ugly_t2*2, *ugly_t3*3, *ugly_t5*5);
+        min = ugly_min(*ugly_t2*2, *ugly_t3*3, *ugly_t5*5);
+        *next = min;
+
+        printf("别这样3 min = %d, %zd\n", min, next - ugly);
 
         // 思路太巧妙了.
         while (*ugly_t2*2 <= min)
@@ -80,11 +86,81 @@ int GetUglyNumberOptimize(int index) {
             ugly_t3++;
         while (*ugly_t5*5 <= min)
             ugly_t5++;
-
-        *next = min;
     }
 
     free(ugly);
+
+    return min;
+}
+
+int nthUglyNumber0(int n) {
+    // 假定 n 就是属于 [1, 1690]
+    int ugly[n];
+    int * ugly2 = ugly;
+    int * ugly3 = ugly;
+    int * ugly5 = ugly;
+
+    int * next = ugly;
+
+    ugly[0] = 1;
+    while (++next - ugly < n) {
+        // ugly 2 3 5 指针变化
+        int num2 = *ugly2 * 2;
+        int num3 = *ugly3 * 3;
+        int num5 = *ugly5 * 5;
+        
+        // min 最小值
+        int min = num2 < num3 ? num2 : num3;
+        if (min > num5) {
+            min = num5;
+        }
+        *next = min;
+
+        if (min == num2) {
+            ugly2++;
+        } 
+        if (min == num3) {
+            ugly3++;
+        } 
+        if (min == num5) {
+            ugly5++;
+        }
+    }
+
+    return next[-1];
+}
+
+int nthUglyNumber(int n) {
+    // 假定 n 就是属于 [1, 1690]
+    int ugly[n];
+    int * ugly2 = ugly;
+    int * ugly3 = ugly;
+    int * ugly5 = ugly;
+
+    int * next = ugly+1;
+
+    ugly[0] = 1;
+    while (next - ugly < n) {
+        // ugly 2 3 5 指针变化
+        int num2 = *ugly2 * 2;
+        int num3 = *ugly3 * 3;
+        int num5 = *ugly5 * 5;
+        
+        // min 最小值
+        int min = num2 < num3 ? num2 : num3;
+        if (min > num5) {
+            min = num5;
+        }
+
+        *next++ = min;
+
+        while (*ugly2 * 2 <= min)
+            ugly2++;
+        while (*ugly3 * 3 <= min)
+            ugly3++;
+        while (*ugly5 * 5 <= min)
+            ugly5++;
+    }
 
     return next[-1];
 }
@@ -93,13 +169,23 @@ int GetUglyNumberOptimize(int index) {
 // gcc -g -O3 -Wall -Wextra -Werror -o 53_ugly_number 53_ugly_number.c
 //
 int main(void) {
-    int number;
-    int index = 1500;
+    int number = 1, number2;
+    int index = 10;
 
     // index = 1500 ugly 859963392
     // number = GetUglyNumber(index);
-    number = GetUglyNumberOptimize(index);
+    // number = GetUglyNumberOptimize(index);
     printf("index = %d ugly %d\n", index, number);
+
+    index = 10;
+    number = nthUglyNumber(index);
+    number2 = nthUglyNumber0(index);
+    printf("number = %d, number2 = %d\n", number, number2);
+
+    index = 1500;
+    number = nthUglyNumber(index);
+    number2 = nthUglyNumber0(index);
+    printf("number = %d, number2 = %d\n", number, number2);
 
     exit(EXIT_SUCCESS);
 }
