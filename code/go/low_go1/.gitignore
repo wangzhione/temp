@@ -1,0 +1,48 @@
+# Ignore the uploaded folders
+bin/
+Out/
+logs/
+Outs/
+Output/
+
+# Ignore the project uploaded folders
+.o/
+.vs/
+x64/
+Debug/
+Release/
+
+# Ignore the uploaded files
+-p
+~*
+*~
+core
+*.o
+*.db
+*.suo
+*.swp
+*.swo
+*.exe
+*.out
+*.pdb
+*.pch
+*.ilk
+*.log
+*.err
+*.out
+*.obj
+*.idb
+*.TMP
+core*
+.*.swo
+*.iobj
+*.ipdb
+*.tlog
+*.opendb
+
+// 忽略下面所有所有文件, 但是有 *.* 规则的不忽略
+/*
+!*.go
+!.gitignore
+!*.md
+!*.sh
