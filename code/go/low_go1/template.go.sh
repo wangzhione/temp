@@ -12,6 +12,7 @@ file=$1
 
 if [[ -a ${file} ]]
 then
+    code ${file}
     echo "${file} exists"
     exit 0
 fi
@@ -19,3 +20,5 @@ fi
 readonly template_file=template.go
 
 sed "s/{name}/${file}/g" ${template_file} > ${file}
+
+code ${file}

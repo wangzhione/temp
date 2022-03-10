@@ -46,3 +46,4 @@ core*
 !.gitignore
 !*.md
 !*.sh
+!.vscode
