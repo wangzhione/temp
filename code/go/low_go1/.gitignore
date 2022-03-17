@@ -47,3 +47,7 @@ core*
 !*.md
 !*.sh
 !.vscode
+!03_redis_lock
+!*.lua
+!go.mod
+!go.sum
