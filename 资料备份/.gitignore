@@ -1,0 +1,40 @@
+# Ignore the uploaded folders
+bin/
+Out/
+logs/
+Outs/
+Output/
+
+# Ignore the project uploaded folders
+.o/
+.vs/
+x64/
+Debug/
+Release/
+
+# Ignore the uploaded files
+-p
+~*
+*~
+core
+*.db
+*.suo
+*.swp
+*.swo
+*.exe
+*.out
+*.pdb
+*.pch
+*.ilk
+*.log
+*.err
+*.out
+*.obj
+*.idb
+*.TMP
+core*
+.*.swo
+*.iobj
+*.ipdb
+*.tlog
+*.opendb
