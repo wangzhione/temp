@@ -54,6 +54,7 @@ func main() {
 	quit := make(chan struct{}, 1)
 	go func(ptr *int) {
 		defer fmt.Println("go func for loop exit", *ptr)
+
 		for {
 			select {
 			case <-quit:
