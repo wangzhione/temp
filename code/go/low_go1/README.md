@@ -244,4 +244,6 @@ https://mp.weixin.qq.com/s/lrSQBK-Kihkj6994kQFpUQ#at
 
 ### 102. 集群用 channel 如何实现分布式锁？
 
+@see 03_redis_lock
+
 ## 后记
