@@ -3,7 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"testing"
+	"time"
 )
 
 func FuzzHex(f *testing.F) {
@@ -22,6 +25,14 @@ func FuzzHex(f *testing.F) {
 		}
 		t.Logf("done")
 	})
+
+	now := time.Now()
+	fmt.Printf("now = %+v\n", now)
+
+	a := 6
+	data, err := json.Marshal(a)
+	var dnil []byte
+	fmt.Println("json.Marshal", dnil, string(data), err)
 }
 
 /*
