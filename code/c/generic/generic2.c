@@ -73,11 +73,11 @@ PERR_SELECT(__VA_ARGS__)(__VA_ARGS__)
 #define PERR_SELECT_NARG(errorfmt, ...)                                 \
 _Generic((errorfmt), int : 1, default: 2)
 
-#define PERR_SELECT2(...)                                                \
+#define PERR_SELECT2(...)                                               \
 CONCAT(PERR_SELECT_, PERR_SELECT_NARG(__VA_ARGS__))(__VA_ARGS__)
 
-#define PERR2(...)                                                       \
-PERR_SELECT(__VA_ARGS__)(__VA_ARGS__)
+#define PERR2(...)                                                      \
+PERR_SELECT2(__VA_ARGS__)(__VA_ARGS__)
 
 // build :
 // gcc -g -O2 -Wall -Wextra -Werror -o generic2 generic2.c
@@ -89,8 +89,8 @@ int main(void) {
     PERR(1, "你好");
     PERR("世界");
 
-    PERR2(2, "世界");
-    PERR2("你好");
+    // PERR2(2, "世界");
+    // PERR2("你好");
 
     exit(EXIT_SUCCESS);
 }
