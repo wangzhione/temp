@@ -26,3 +26,19 @@ func TestNewTemplateLRU(t *testing.T) {
 	c.Delete("234")
 	fmt.Println(c.Get("234"))
 }
+
+// Value 空模板
+type Value[K comparable, V any, T any] struct{}
+
+func (v *Value[K, V, T]) Get(param T) {
+	println(param)
+}
+
+// 测试
+func TestNewTemp(t *testing.T) {
+	v1 := Value[string, string, int]{}
+	v1.Get(234)
+
+	v2 := Value[string, string, string]{}
+	v2.Get("string")
+}
