@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
@@ -41,4 +42,12 @@ func TestNewTemp(t *testing.T) {
 
 	v2 := Value[string, string, string]{}
 	v2.Get("string")
+}
+
+func ToPBSlice[M any, MODEL interface{ PB(context.Context) M }](ctx context.Context, models []MODEL) []M {
+	pbModels := make([]M, len(models))
+	for i, model := range models {
+		pbModels[i] = model.PB(ctx)
+	}
+	return pbModels
 }
