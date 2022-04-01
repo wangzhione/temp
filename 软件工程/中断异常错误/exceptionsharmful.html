@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Exception Handling Considered Harmful</title>
+        <style>
+            html, body { background: #FFF; padding: 0; margin: 0; }
+            body { min-width: 768px; margin: 0 auto; font-size: 62.5%; font-family: Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; }
+            @media only screen and (max-device-width: 1024px) {
+                body { max-width: 1024px; }
+                @media only screen and (orientation: landscape) {
+                    body, #navbar { min-width: 1024px; }
+                    body { font-size: 62.5%; }
+                }
+            }
+            @media only screen and (max-device-width: 599px) {
+                body { font-size: 125%; -webkit-text-size-adjust: none; }
+                @media only screen and (orientation: landscape) {
+                    body { font-size: 93.75%; }
+                }
+            }
+            @media print {
+                body { min-width: 850px; }
+            }
+            
+            nav, article, header, hgroup, figure, figcaption, aside, section, footer { display: block; margin: 0; }
+            
+            h1, h2, h3, h4, h5, h6, dt { font-family: Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; font-style: italic; page-break-inside: avoid; page-break-after: avoid; }
+            h1 { font-size: 40px; color: #FFF; text-shadow: 3px 3px 8px #000; }
+            h2, h3, h4, h5, h6, dt { color: #007; text-shadow: 0.17em 0.17em 0.4em #AAA; margin-top: 1.2em; margin-bottom: 0.7em; }
+            h2 { font-size: 1.9em; margin-top: 2em; }
+            h3 { font-size: 1.7em; }
+            h4 { font-size: 1.5em; }
+            h5, h6 { font-size: 1.3em; }
+            h1, h2, h3 { text-rendering: optimizeLegibility; }
+            h5, h6, dt { font-weight: bold; text-shadow: 0.13em 0.13em 0.25em #AAA; margin-top: 1em; margin-bottom: 0.5em; }
+            @media only screen and (max-device-width: 599px) {
+                h2 { font-size: 1.6em; }
+                h3 { font-size: 1.5em; }
+                h4 { font-size: 1.4em; }
+            }
+            
+            p, ol, ul, dl, th, td { font-size: 1.3em; color: #000; }
+            ol ol, ol ul, ul ol, ul ul, dl ol, dl ul, dl dl, dl th, dl td, td p, td ol, td ul, td dl, td td, td th { font-size: 100%; }
+            li { page-break-inside: avoid; }
+            dd { margin-left: 1.6em; }
+            
+            sup, sub { font-size: 50%; }
+            
+            a { color: #08F; text-decoration: none; outline: none; }
+            a:visited { color: #06C; }
+            a:hover, a:focus { text-decoration: underline; }
+            a:active { color: #4BF; }
+            h1 a, #title a { color: #FFF; text-decoration: none; }
+            h1 a:active, #title a:active { color: #EEF; }
+            .sidebarleft a, .sidebarright a, .messagebox a { color: #08F; }
+            @media print {
+                a:visited { color: #08F; }
+            }
+            
+            @font-face { font-family: Consolas; src: local("Consolas"), local("Consolas-Regular"), url(../../shared/fonts/consolas-subset-5.00.woff) format("woff"); }
+            @font-face { font-family: Consolas; font-weight: bold; src: local("Consolas Bold"), local("Consolas-Bold"), url(../../shared/fonts/consolas-bold-5.00.woff) format("woff"); }
+            @font-face { font-family: Consolas; font-style: italic; src: local("Consolas Italic"), local("Consolas-Italic"), url(../../shared/fonts/consolas-italic-5.00.woff) format("woff"); }
+            @font-face { font-family: Consolas; font-weight: bold; font-style: italic; src: local("Consolas Bold Italic"), local("Consolas-Bold-Italic"), url(../../shared/fonts/consolas-bold-italic-5.00.woff) format("woff"); }
+            pre, code, kbd, samp { font-family: Consolas, monospace; }
+            pre { font-size: 1.2em; color: #0EE; background: #003; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; line-height: 1.3; padding: 1.5em 2em; border-radius: 0.4em; -moz-border-radius: 0.4em; -webkit-border-radius: 0.4em; margin-left: 2em; margin-right: 2em; overflow-x: auto; overflow-y: auto; page-break-inside: avoid; }
+            code, kbd, samp { line-height: 0; white-space: pre-wrap; }
+            @media only screen and (max-device-width: 599px) {
+                pre { padding: 1em; margin-left: 0; margin-right: 0; }
+            }
+            @media print {
+                pre { color: #000; background: #FFF; }
+            }
+            
+            img { display: block; border: 0; page-break-inside: avoid; }
+            a:active img { position: relative; top: 1px; }
+            #navbar a:active img, #subnavbar a:active img { top: 0; }
+            
+            table { font-size: inherit; border-collapse: collapse; page-break-inside: avoid; }
+            table, th, tr, td { border: 0; border-spacing: 0; }
+            
+            blockquote { font: 1.7em FreeSerif, "Times New Roman", Times, "Liberation Serif", serif; font-style: italic; page-break-inside: avoid; }
+            @media only screen and (max-device-width: 599px) {
+                blockquote { font-size: 1.4em; }
+            }
+            
+            hr { background: url(../../shared/curvedheader/sprite3uk.png) 0 -248px no-repeat; width: 512px; height: 1px; border: 0; margin: 3em auto; }
+            
+            form ol, form ul { list-style: none; padding: 0; margin: 0; }
+            input, textarea, select, button { font-size: 100%; font-family: Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; }
+            input[type=checkbox], input[type=radio] { vertical-align: middle; position: relative; bottom: 1px; }
+            input[type=radio] { bottom: 2px; }
+            
+            meter, progress { color: #3CF; }
+            
+            .heading { font-family: Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; font-weight: bold; font-style: italic; color: #007; }
+            
+            .major { font-size: 108%; }
+            .minor { font-size: 92%; }
+            p.major { font-size: 1.4em; }
+            p.minor { font-size: 1.2em; }
+            h2 .minor, h3 .minor { font-size: 75%; }
+            @media only screen and (max-device-width: 599px) {
+                .major { font-size: 104%; }
+                p.major { font-size: 1.35em; }
+            }
+            
+            a .link { color: #29F; }
+            a:visited .link { color: #06C; }
+            a .link:hover { text-decoration: underline; }
+            a .link:active { color: #4BF; }
+            
+            .fineprint { font: 1.1em Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; }
+            
+            .nowrap { white-space: nowrap; }
+            .clear { clear: both; }
+            
+            .mainbody { margin: 0 12%; }
+            .mainbodycol1 { float: left; width: 48%; padding-top: 1px; }
+            .mainbodycol2 { margin-left: 52%; padding-top: 1px; }
+            @media only screen and (max-width: 949px) {
+                .mainbody { margin: 0 8%; }
+            }
+            @media only screen and (max-width: 899px) {
+                .mainbody { margin: 0 4%; }
+            }
+            @media only screen and (max-width: 849px) {
+                .mainbody { margin: 0 2%; }
+            }
+            @media only screen and (max-width: 849px) and (orientation: landscape) {
+                .mainbody { margin: 0 4.4%; }
+            }
+            @media only screen and (max-device-width: 599px) {
+                .mainbody { margin: 0 -3%; }
+                .mainbodycol1, .mainbodycol2 { float: none; width: 100%; margin-left: 0; padding-top: 0; }
+            }
+            @media print {
+                .mainbody { margin: 0 4%; }
+            }
+            
+            .quote { font: 1.7em FreeSerif, "Times New Roman", Times, "Liberation Serif", serif; font-style: italic; color: #333; text-align: right; margin: 0 0 0.5em 0; page-break-inside: avoid; page-break-after: avoid; }
+            .quoteauthor { font-size: 1.2em; color: #333; text-align: right; margin: 0 0 1em 0; page-break-inside: avoid; page-break-after: avoid; }
+            @media only screen and (max-device-width: 599px) {
+                .quote { font-size: 1.4em; }
+                .quoteauthor { font-size: 1.1em; }
+            }
+            
+            .author { font: 1.1em Arial, Helvetica, "Liberation Sans", FreeSans, sans-serif; font-weight: bold; color: #AAA; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; margin-bottom: 1.8em; }
+            .author a, .author a:visited { color: #AAA; }
+            .author a:active { color: #0CF; }
+            
+            .tocbutton { font-size: 1.1em; float: right; margin: 1em 0 1em 1em; }
+            .toc h2, .toc li { margin-top: 0; }
+            .toc ol { padding-left: 3em; }
+            
+            .foldout { height: 0; max-height: 0; opacity: 0; visibility: hidden; overflow: hidden; }
+            
+            .codekeyword { color: #4D8FFF; }
+            .codetype { color: #4EB4D2; }
+            .codeliteral { color: #14B9FF; }
+            .codestring { color: #14B9FF; }
+            .codecomment { color: #3DFF9D; font-style: italic; }
+            @media print {
+                .codekeyword { color: #0000E0; }
+                .codetype { color: #31849B; }
+                .codeliteral { color: #000; }
+                .codestring { color: #0090D0; }
+                .codecomment { color: #00A000; }
+            }
+            
+            .photo, .diagram { margin: 0 auto; }
+            .photo { box-shadow: 3px 3px 5px #999; -moz-box-shadow: 3px 3px 5px #999; -webkit-box-shadow: 3px 3px 5px #999; }
+            .caption { font: 1.1em Arial, Helvetica, "Liberation Sans", FreeSans, sans-serif; font-weight: bold; text-align: center; margin: 0.54em 0 0 0; page-break-before: avoid; page-break-inside: avoid; }
+            @media only screen and (max-device-width: 599px) {
+                .caption { font-size: 1em; }
+            }
+            
+            .arealeft { clear: both; float: left; margin: 0 20px 12px 0; }
+            .arearight { clear: both; float: right; margin: 0 0 12px 15px; }
+            .arealeft img, .arearight img { margin-top: 7px; }
+            
+            .sidebarleft, .sidebarright { clear: both; width: 30%; padding: 0 15px; box-shadow: 3px 3px 5px #999; -moz-box-shadow: 3px 3px 5px #999; -webkit-box-shadow: 3px 3px 5px #999; }
+            .sidebarleft { float: left; margin: 0 20px 12px 0; background: #D7FFFA; border: 1px solid #80EADC; }
+            .sidebarright { float: right; margin: 0 0 12px 15px; background: #CCF6FF; border: 1px solid #0DF; }
+            .sidebarleft p, .sidebarright p { font-family: Arial, Helvetica, "Liberation Sans", FreeSans, sans-serif; }
+            @media only screen and (max-device-width: 599px) {
+                .sidebarleft, .sidebarright { float: none; width: 93%; padding: 0 25px; margin: 0 auto; }
+            }
+            
+            .messagebox { width: 66%; padding: 14px 20px 7px 20px; background: #CCF6FF; border: 1px solid #0DF; box-shadow: 3px 3px 8px #999; -moz-box-shadow: 3px 3px 8px #999; -webkit-box-shadow: 3px 3px 8px #999; margin: 40px auto; page-break-inside: avoid; }
+            .messagebox h2 { text-shadow: none; margin: 0; }
+            @media only screen and (max-device-width: 599px) {
+                .messagebox { width: 95%; }
+            }
+            
+            #page, #background, #bgoverlay { width: 100%; }
+            #page { background: #FFF; }
+            
+            #navbarbg1, #navbarbg2 { position: absolute; left: 0; top: 0; background: #003; }
+            #navbarbg1 { width: 100%; height: 52px; }
+            #navbarbg2 { width: 285px; height: 74px; }
+            #navbarbg3 { background: url(../../shared/curvedheader/sprite3uk.png) 0 -2px no-repeat; float: left; width: 767px; height: 90px; }
+            #navbarbg4 { background: url(../../shared/curvedheader/sprite3uk.png) 0 -98px repeat-x; margin-left: 767px; height: 90px; }
+            #navbar { position: absolute; left: auto; top: 0; width: 100%; max-width: 1200px; height: 90px; overflow: hidden; }
+            #navbar table { width: 100%; padding: 0; margin: 12px 0 0 0; }
+            #navbar tr, #navbar td, #subnavbar tr, #subnavbar td { vertical-align: top; padding: 0; margin: 0; }
+            #navbar #navbarlogocell { padding: 0 0 0 12px; }
+            #navbarlighterra { background: url(../../shared/curvedheader/sprite3uk.png) -2px -192px no-repeat; }
+            #navbarabout { background: url(../../shared/curvedheader/sprite3uk.png) -270px -192px no-repeat; }
+            #navbarsoftware { background: url(../../shared/curvedheader/sprite3uk.png) -378px -192px no-repeat; }
+            #navbararticles { background: url(../../shared/curvedheader/sprite3uk.png) -516px -192px no-repeat; }
+            #navbarsearch { background: url(../../shared/curvedheader/sprite3uk.png) -647px -192px no-repeat; }
+            
+            #content { width: 88%; margin: 0 6%; min-height: 560px; }
+            #title { margin: 30px 0 100px 70px; }
+            
+            #breadcrumbs { width: 100%; text-align: center; padding-top: 2em; page-break-inside: avoid; }
+            #breadcrumbs p { font: 1.1em Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; color: #AAA; margin: 0 3%; }
+            #breadcrumbs a, #breadcrumbs a:visited { color: #AAA; }
+            #breadcrumbs a:active { color: #0CF; }
+            
+            #footerbg { background: url(../../shared/curvedheader/sprite3uk.png) 0 -253px repeat-x; width: 100%; height: 20px; }
+            #footer { width: 100%; background: #003; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; padding: 1em 0; font-family: Arial, Helvetica, "Liberation Sans", FreeSans, sans-serif; page-break-inside: avoid; }
+            #footercol1 { float: left; width: 30.5%; margin: 0 1.5% 0 6%; padding-top: 1px; }
+            #footercol2 { float: left; width: 25%; margin: 0 2%; padding-top: 1px; }
+            #footercol3 { margin: 0 6% 0 67%; padding-top: 1px; }
+            #footer h6 { font-size: 1.5em; color: #1FEBFF; text-shadow: none; margin: 9px 0; }
+            #footer p { font-size: 1.3em; color: #AAA; margin: 0.7em 0; }
+            #footer ul { list-style: none; font-size: 1.3em; padding: 0; margin: 0; }
+            #footer li { margin: 0.5em 0 0 0; }
+            #footer a, #footer a:visited { color: #AAA; }
+            #footer a:hover { color: #CCC; }
+            #footer a:active { color: #0CF; }
+            #footer h6 a, #footer h6 a:visited, #footer h6 a:hover { color: #1FEBFF; }
+            #footer h6 a:active { color: #2FF; }
+            #footercol1 p a { color: #BBB; }
+            #footercol1 img { float: left; margin: 4px 10px 5px 0; }
+            #footer hr { background: url(../../shared/curvedheader/sprite3uk.png) 0 -251px no-repeat; margin: 1.5em auto 1em auto; }
+            #footer .copyright { font: 1.1em Verdana, "DejaVu Sans", "Bitstream Vera Sans", sans-serif; text-align: center; }
+            #footer .copyright a, #footer .copyright a:visited { color: #AAA; }
+            #footer .copyright a:active { color: #0CF; }
+            @media only screen and (max-device-width: 599px) {
+                #footercol1, #footercol2, #footercol3 { float: none; width: 90%; margin: 0 5% 0.7em 5%; }
+                #footercol1 img { width: 85px; height: 85px; margin: 14px 24px 10px 0; }
+                #footer p { font-size: 1.38em; }
+                #footer li { margin-left: 1em; }
+            }
+            @media print {
+                #footerbg { height: 0; }
+                #footer { background: #FFF; }
+                #footercol1, #footercol2, #footercol3 { height: 0; visibility: hidden; overflow: hidden; }
+                #footer hr { margin-top: 0; }
+            }
+        </style>
+    </head>
+    <body>
+        <article>
+            <div id="content">
+                <h1 id="title">Exception Handling<br>Considered Harmful</h1>
+                <div class="mainbody">
+                <p class="quote">Do, or do not. There is no try.</p>
+                <p class="quoteauthor">— Yoda, The Empire Strikes Back<br>
+                (George Lucas)</p>
+                <p class="author">by <a href="https://www.lighterra.com/jason/" target="_blank">Jason Robert Carey Patterson</a>, Nov 2005</p>
+                <p>Recent programming languages such as Java, Python and Ruby have chosen to use exception handling as their primary method of error handling, replacing the traditional approach of error return codes. I believe continuing this trend for future programming languages would be a mistake, for two reasons...</p>
+                <ol>
+                    <li>Exception handling introduces a hidden, "out-of-band" control-flow possibility at essentially every line of code. Such a hidden control transfer possibility is all too easy for programmers to overlook – even experts. When such an oversight occurs, and an exception is then thrown, program state can quickly become corrupt, inconsistent and/or difficult to predict (think about an exception unexpectedly being thrown part way through modifying a large data structure, for example).</li>
+                    <li>Exception handling does not fit well with most of the highly parallel programming models currently in use or being explored (fork/join, thread pools and task queues, the CSP/actor model etc), because exception handling essentially advocates a kind of single-threaded "rollback" approach to error handling, where the path of execution – implicitly a <em>single</em> path – is traversed in reverse by unwinding the call stack to find the appropriate error handling code.</li>
+                </ol>
+                <h2>Good Intentions</h2>
+                <p>Exception handling was originally intended to solve several perceived problems with the traditional approach of error handling via return codes.</p>
+                <p>First, by separating the error handling code from the main body of normal code, it was hoped that the code would be less cluttered, and hence <em>cleaner</em>, with the normal, non-error case easier to follow because it was not obscured by necessary but tedious and unlikely error checking/handling.</p>
+                <p>Second, by allowing a separation between the point where an error occurs and the point where it is handled, even a potentially very large separation across many function calls, it was hoped to enable better handling of errors deep within libraries, allowing those errors to be propagated back to the application without requiring a whole chain of error checking and returning code to be written, and thus avoiding the tendency for libraries to swallow or generalize errors because it was too much hassle to feed them all the way back in full detail.</p>
+                <p>Finally, exceptions were seen as a solution to the "semi-predicate" problem, where for some operations every possible return value is valid and thus an error must be indicated through some other, more indirect means, such as a pass-by-reference error argument or an internal success/failure state indicator within an object.</p>
+                <p>To solve these problems, exception handling essentially advocates a kind of "rollback" approach to error handling. When an error occurs an exception is "thrown", which engages the runtime system to begin a rollback operation by unwinding the call stack, destroying local objects as it goes, until a suitable error handler "catch" block is reached, and execution continues from there.</p>
+                <p>The primary intended benefit of such an approach is that all of the code between the place where the error happens and is thrown, and the place where the exception is caught and handled, can simply remain blissfully unaware of the error, and not have to detect and handle it explicitly. Local objects just get destroyed automatically while unwinding the call stack, and all is well.</p>
+                <p>Sounds good, right?</p>
+                <h2>Hidden Control Flow &amp; Corrupt State</h2>
+                <p>One immediately obvious problem with a "rollback" style approach to error handing is that many operations are not so trivially rolled back simply by destroying local objects (and perhaps letting heap objects be cleaned up by a garbage collector). The classic example is I/O – you cannot un-print something to the screen, un-ask for user input, un-overwrite a file's contents, or un-send a network packet. All true, and an excellent point.</p>
+                <p>But that's just the tip of the iceberg. I/O isn't even the real problem. It is just one of a number of possible non-local side effects that code might have. Far more common, yet often overlooked, is <em>state</em> in general – any code which simply makes changes to some part of a shared data structure, like a document model or a scene graph. Unwinding the stack and destroying local objects won't undo those changes. In fact, in an exception-rich environment where the act of making such changes can potentially cause an exception, it is impossible to write a strongly exception-safe function that has two or more unrelated side effects, of <em>any</em> kind, that cannot be performed atomically.</p>
+                <blockquote>It is impossible to write a strongly exception-safe function<br>
+                that has two or more unrelated side effects, of any kind,<br>
+                that cannot be performed atomically.</blockquote>
+                <p>Consider an exception unexpectedly being thrown part way through modifying a large data structure, for example. How likely is it that the programmer has written code to correctly catch that exception, undo or reverse the partial changes already made to the data structure, and re-throw the exception? Very unlikely! Far more likely is the case that the programmer simply never even considered the possibility of an exception happening in the first place, because exceptions are hidden, not indicated in the code at all. When an exception then occurs, it causes a completely unexpected control transfer to an earlier point in the program, where it is caught, handled, and execution proceeds – with a now corrupt, half-modified data structure!</p>
+                <p>Any non-trivial shared-data-modifying algorithm cannot, in general, be truly strongly exception-safe unless either the programming language itself provides some form of transactional capability (eg: SQL's commit approach), or the programmer simulates transactional behavior in code by making a copy of the data, modifying the copy, and doing some kind of pointer swap to make the new copy the "real thing" atomically – which is ridiculously tedious and clearly not practical for large objects or complex data structures.</p>
+                <p>So if you're in the middle of modifying data, and an exception occurs, you could easily end up leaving the data in a half-baked state. That is really, <em>really</em> dangerous, because it invites the possibility of <em>silent data corruption</em>. In most cases, any clearly visible error signal, even program termination, is by far preferable to the possibility of silent data corruption. And exception handling simply isn't a clearly visible error signal. Most of the calling code can, and does, simply ignore exceptions, assuming some code further back will catch and handle them.</p>
+                <p>Thus, coding styles relying on exception handling over anything more than trivial distance between throw and catch have a tendency to <em>"take simple, reproducible and easy to diagnose failures and turn them into hard-to-debug subtle corruptions"</em>, to quote <a href="http://blogs.msdn.com/b/larryosterman/archive/2004/09/10/228068.aspx">Larry Osterman</a>.</p>
+                <p>Forcing the calling code to handle the error <em>right away</em> is the correct approach, because it forces the programmer to <em>think</em> about the possibility of an error occurring. That's a key point. The fact that this clutters the code with error checking is unfortunate, but it is a small price to pay for correctness of operation. Exceptions tend to allow, even encourage, programmers to ignore the possibility of an error, assuming it will be magically handled by some earlier exception handler.</p>
+                <blockquote>Forcing the calling code to handle the error right away is<br>
+                the correct approach, because it forces the programmer<br>
+                to think about the possibility of an error occurring.<br>
+                <br>
+                Exceptions tend to allow, even encourage, programmers<br>
+                to ignore the possibility of an error, assuming it will be<br>
+                magically handled by some earlier exception handler.</blockquote>
+                <p>In order to write exception-safe code, at <em>every</em> significant line of code the programmer must take the possibility of an exception and rollback happening into account, to be sure the code cleans up properly and leaves things in a suitable, stable state if an exception occurs – that it doesn't leave a data structure half-modified, or a file or network connection open, for example. That is decidedly non-trivial. It takes a great deal of time and effort, it requires a very high degree of discipline to get right, and it is just far too easy to forget or overlook something – even experts frequently get it wrong.</p>
+                <div class="sidebarright">
+                    <p>Putting more general issues aside for just a moment, the C++ exception handling system in particular wasn't very well thought out IMHO, and is by far the weakest part of the language – so much so that I generally recommend people don't use C++ exceptions at all, and turn them off in their compiler if possible.</p>
+                    <p>Exception handling is the only C++ language feature which requires significant support from a complex runtime system, and it's the only C++ feature that has a runtime cost even if you don't use it – sometimes as additional hidden code at every object construction, destruction, and try block entry/exit, and <em>always</em> by limiting what the compiler's optimizer can do, often quite significantly. Yet C++ exception specifications are not enforced at compile time anyway, so you don't even get to know that you didn't forget to handle some error case! And on a stylistic note, the exception style of error handling doesn't mesh very well with the C style of error return codes,
+                    which causes a real schism in programming styles because a great deal of C++ code must invariably call down into underlying C libraries.</p>
+                    <p>Furthermore, because C++ doesn't have garbage collection it is all too easy even for experts (see <a href="http://www.informit.com/content/images/020163371x/supplements/Exception_Handling_Article.html" target="_blank">here</a>, <a href="http://www.gotw.ca/gotw/008.htm" target="_blank">here</a>, <a href="http://www.gotw.ca/gotw/059.htm" target="_blank">here</a> and <a href="http://www.gotw.ca/gotw/060.htm" target="_blank">here</a>) to accidentally write code which leaks memory if an exception is thrown by some function you call, <em>even if you yourself don't use exceptions</em>. This is further complicated by C++'s lack of a <em>finally</em> block to simplify cleanup. It is also particularly easy in C++ to leave objects in a half-baked state when an exception occurs, because even many "primitive" operations like assignment can potentially throw exceptions. In practice, it becomes essentially impossible not to leave objects in a half-baked state once the objects grow beyond trivial size/complexity. Even many of the STL containers are not strongly
+                    exception-safe – they don't leak memory, but they might leave your data in a half-baked state where the operation was only "partially" done, which is not terribly useful or helpful.</p>
+                </div>
+                <p>The core problem is the <em>hidden</em> control-flow possibility. There's a famous joke about a mythical programming language construct called <em>comefrom</em>, which is a parody on the problematic <em>goto</em> statement found in many early programming languages. The idea is that the programmer can, at any point in the program, say "comefrom 20", and any time execution reaches line 20 it will immediately jump to the "comefrom" code. The point being made here is that <em>nothing on line 20 itself</em> indicates that control flow might be diverted like this. Exception handling introduces precisely this kind of hidden control flow possibility, at nearly every significant line of code: every function/method call, every new object construction, every overloaded operator etc.</p>
+                <p>Exception handling thus breaks the "principle of least astonishment", and breaks it <em>HUGE.</em></p>
+                <p><a href="http://www.joelonsoftware.com/items/2003/10/13.html" target="_blank">Joel Spolsky</a> expresses the issue in his concise and down-to-earth manner as follows: <em>"They are invisible in the source code. Looking at a block of code, including functions which may or may not throw exceptions, there is no way to see which exceptions might be thrown and from where. This means that even careful code inspection doesn't reveal potential bugs. ... To write correct code, you really have to think about every possible code path through your function. Every time you call a function that can raise an exception and don't catch it on the spot, you create opportunities for surprise bugs caused by functions that terminated abruptly, leaving data in an inconsistent state, or other code paths that you didn't think about."</em></p>
+                <h2>Mismatch With Parallel Programming</h2>
+                <p>The very idea of rollback/unwinding which is so central to exception handling more-or-less inherently implies that there is a sequential call chain to unwind, or some other way to "go back" through the callers to find the nearest enclosing catch block. This is horribly at odds with any model of parallel programming, which makes exception handling very much less than ideal going forward into the many-core, parallel programming era which is the future of computing.</p>
+                <p>Even when considering the simplest possible parallel programming model of all – a straightforward parallel fork/join, such as processing all of the elements of an array in parallel – the problem is immediately obvious. What should you do if you fork 20 threads and just one of them throws an exception? Unwind back past the forking and kill the other 19 threads, risking data corruption? Unwind but leave the other 19 threads running never to be joined/reaped, and doing who knows what to objects you supposedly destroyed during the unwinding? Make the programmer put in a catch block at the point of forking, which still has to choose between those two basic possibilities anyway?</p>
+                <p>Moving to more interesting and useful models of parallelism, exception handling again seems completely mismatched. Today, for example, the most common practical model used for flexible parallelism is a pool of worker threads each executing small units of work, often called tasks or operations, which are stored in some kind of work queue and dispatched to the thread pool one after another as each thread finishes its current task. Applying exception handling to such a scheme seems impossible, since the units of work are essentially detached from any "caller". The whole concept of unwinding the call stack makes no sense at all in such a situation.</p>
+                <p>More sophisticated parallel programming models, such as asynchronous message passing between communicating sequential processes (CSP or the "actor" model), have similar properties to the thread pool and task queue approach, though these properties are hidden by proper language support. Again, since there is no obvious execution path to unwind, and since messages between objects/actors are frequently asynchronous, it is difficult to see how the general approach of exception handling can be applied.</p>
+                <p>Finally, because exceptions are an out-of-band control mechanism, existing outside the normal call/return mechanism, they don't fit very well when the CSP or actor model is taken to its logical next step, with objects/actors on different systems connected by a network. You can easily return an error code over a byte stream that happens to be a network connection, but you can't easily throw an exception back over a network connection, because the exception is "out of band" – it doesn't come back via the normal data channel. An elaborate runtime system could, of course, work around this, but is that really a sensible approach?</p>
+                <p>The simple fact is the concept of rollback/unwinding just doesn't work very well in a highly parallel situation, even a simple one like fork/join, let alone more sophisticated and useful models like thread pools or CSP/actors. Trying to retrofit exceptions and rollback/unwinding into a parallel environment seems like an exercise in complexity, frustration and ultimately futility.</p>
+                <h2>Exceptional Exceptions</h2>
+                <p>Many advocates of exception handling admit that it is best used only for extremely rare "exceptional" cases. In other words, you should use error return codes for anything that might actually happen in real life, but as long as you only use exceptions for things that will never actually happen they're fine. Maybe I'm exaggerating for effect here, but you get the point.</p>
+                <p>I personally take the view that most of the "exceptional" cases they're talking about should basically just be guaranteed by the system to never happen at all – memory allocation failures, runtime stack exhaustion, other kinds of resource exhaustion, memory access violations etc. We shouldn't be exposing those kinds of things to applications at all, because in nearly all cases there is precious little the application can sensibly do to recover from the error anyway. There's useful complexity and then there's useless complexity, and having to write application code to deal with things that will never really happen, or for which the only safe response is program termination anyway, is just adding useless complexity.</p>
+                <p>Instead, we should be presenting applications with the illusion of a machine with infinite resources, thereby making writing applications that much simpler and less error-prone. If physical resources actually do become exhausted, it should be the responsibility of the operating system, not the application, to take appropriate action. As a simple example, memory allocation should be guaranteed not to fail in general, with special options to return NULL on failure for those few rare cases where recovery from failure makes sense (such as allocating a very large image or handling the possibility of failure in some alternative way like working at a lower resolution).</p>
+                <p>For those of you who say "but what about small, embedded devices that have real resource limits?", the answer there is simply to go and look at what's actually being done in the embedded space today. We already have small embedded devices which function as wireless network hotspots, print servers, music servers and NAS servers, all at the same time, all in the size of a power brick. The notion of having "special" versions of programs which run in embedded space and which constantly have to handle resource limits is just as dead as the idea of "special" content for mobile devices (can anyone remember WAP or i-Mode?).</p>
+                <p>The future is essentially standard, general-purpose applications, maybe slightly cut down, running on top of slightly cut down but essentially standard, full-blown OSs, all on your phone, or your watch, or inside your soap dispenser. It's a world where even your toaster runs Linux. In such a world, exposing resource limits like the remote possibility of memory allocation failure to applications is just silly.</p>
+                <h2>Finally</h2>
+                <p>The cold, hard truth is that if you exclude trivial use of exceptions where the exception is caught and handled immediately, essentially mimicking the old error return code approach, then 90% of the other exception handling code out there in the wild isn't exception-safe. It works just fine, as long as an exception never actually happens, but if one does you're basically hosed. Or, to quote <a href="http://blogs.msdn.com/b/mgrier/archive/2004/02/18/75324.aspx" target="_blank">Michael Grier</a>: <em>"Exceptions only really work reliably when nobody catches them."</em></p>
+                <p>I believe this clearly tells you there is a problem with the language feature, and the very idea IMHO. I am certain 99% of C++ code isn't exception-safe, I'm equally sure 99% of Objective-C code isn't exception-safe, and I'd be willing to bet a good 90% of Java code isn't exception-safe either, even with garbage collection to clean up memory leaks. The problem isn't just memory leaks, or even unclosed files and network sockets, it's modifications to shared data structures (and related equivalents like database state, partially written files etc). <em>Those</em> don't get undone by unwinding the stack and destroying local objects, nor by a garbage collector, no matter how smart it is about trying to call <em>finalize()</em> methods in the right order.</p>
+                <p>I vote that all programming language designers should just say no to exceptions. I know I do.</p>
+                <p>Exception handling doesn't really work. It doesn't give the benefits it claims. Hardly any real-world code uses it correctly except in the trivial case, which is just a more verbose equivalent of error return codes. Nobody really uses exceptions to any genuine benefit. They just get in the way and make writing code more silently error-prone. And exception handling is a horrible, horrible mismatch to highly parallel programming.</p>
+                <p>Error return codes work. They are simple. They are effective. They have stood the test of time. More to the point, they are what everyone actually uses when they know an error might really actually happen! That tells you a LOT.</p>
+                <p>If you're a programming language designer, I encourage you to just say <em>no</em> to exceptions, and take your first step into a better, more reliable world.</p>
+                <div class="clear">
+                </div>
+                </div>
+            </div>
+        </article>
+    </body>
+</html>

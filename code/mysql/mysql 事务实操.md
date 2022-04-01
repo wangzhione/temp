@@ -108,3 +108,6 @@ SET GLOBAL innodb_lock_wait_timeout=1500;
 
 https://blog.csdn.net/Maxiao1204/article/details/111022827
 
+我们实操下间隙锁
+
+https://www.jdon.com/artichect/acid-cap.html
