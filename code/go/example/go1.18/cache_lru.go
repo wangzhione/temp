@@ -16,7 +16,7 @@ type entry struct {
 // CacheLUR
 type CacheLRU struct {
 	m    sync.Mutex                    // 因为 Get 触发热度更新操作, 所以只能走互斥
-	cap  int                           // capacity 容量 -1 (or < 0) 标识不限制
+	cap  int                           // capacity 容量 -1 (or <= 0) 标识不限制
 	list *list.List                    // entry container list
 	data map[interface{}]*list.Element // 数据池子
 }
@@ -69,7 +69,7 @@ func (c *CacheLRU) Put(key, value interface{}) {
 	}
 
 	// 容量不够走删除逻辑
-	if c.list.Len() >= c.cap {
+	if c.cap > 0 && c.list.Len() >= c.cap {
 		delete(c.data, c.list.Remove(c.list.Back()).(*entry).key)
 	}
 	// 容量足够开始走添加操作
