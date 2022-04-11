@@ -18,10 +18,15 @@ func main() {
 	bf = 3.0
 	cf = min(af, bf)
 	log.Printf("af = %f, bf = %f, cf = %f\n", af, bf, cf)
+
+	cf = float32(min(2.0, 3.0))
+	log.Printf("af = %f, bf = %f, cf = %f\n", af, bf, cf)
+
+	Echo("Hello, 世界")
 }
 
 type OrderType interface {
-	~int | ~float32
+	~int | ~float32 | ~float64
 }
 
 func min[P OrderType](x, y P) P {
@@ -29,4 +34,8 @@ func min[P OrderType](x, y P) P {
 		return x
 	}
 	return y
+}
+
+func Echo[T any](t T) {
+	println(t)
 }
