@@ -1,0 +1,41 @@
+TEXT "".test2(SB) gofile../home/zhi/temp/code/go/example/fuzz/fuzz.go
+  fuzz.go:13		0xed8			493b6610		CMPQ 0x10(R14), SP	
+  fuzz.go:13		0xedc			0f8698000000		JBE 0xf7a		
+  fuzz.go:13		0xee2			4883ec38		SUBQ $0x38, SP		
+  fuzz.go:13		0xee6			48896c2430		MOVQ BP, 0x30(SP)	
+  fuzz.go:13		0xeeb			488d6c2430		LEAQ 0x30(SP), BP	
+  fuzz.go:13		0xef0			49c7c500000000		MOVQ $0x0, R13		
+  fuzz.go:13		0xef7			4c896c2428		MOVQ R13, 0x28(SP)	
+  fuzz.go:13		0xefc			c644240700		MOVB $0x0, 0x7(SP)	
+  fuzz.go:13		0xf01			48c744240800000000	MOVQ $0x0, 0x8(SP)	
+  fuzz.go:14		0xf0a			48c744241009000000	MOVQ $0x9, 0x10(SP)	
+  fuzz.go:15		0xf13			440f117c2418		MOVUPS X15, 0x18(SP)	
+  fuzz.go:15		0xf19			488d0500000000		LEAQ 0(IP), AX		[3:7]R_PCREL:"".test2.func1	
+  fuzz.go:15		0xf20			4889442418		MOVQ AX, 0x18(SP)	
+  fuzz.go:15		0xf25			488d442410		LEAQ 0x10(SP), AX	
+  fuzz.go:15		0xf2a			4889442420		MOVQ AX, 0x20(SP)	
+  fuzz.go:15		0xf2f			488d442418		LEAQ 0x18(SP), AX	
+  fuzz.go:15		0xf34			4889442428		MOVQ AX, 0x28(SP)	
+  fuzz.go:15		0xf39			c644240701		MOVB $0x1, 0x7(SP)	
+  fuzz.go:16		0xf3e			488b442410		MOVQ 0x10(SP), AX	
+  fuzz.go:16		0xf43			4889442408		MOVQ AX, 0x8(SP)	
+  fuzz.go:16		0xf48			c644240700		MOVB $0x0, 0x7(SP)	
+  fuzz.go:16		0xf4d			488b542428		MOVQ 0x28(SP), DX	
+  fuzz.go:16		0xf52			488b02			MOVQ 0(DX), AX		
+  fuzz.go:16		0xf55			ffd0			CALL AX			[0:0]R_CALLIND		
+  fuzz.go:16		0xf57			488b442408		MOVQ 0x8(SP), AX	
+  fuzz.go:16		0xf5c			488b6c2430		MOVQ 0x30(SP), BP	
+  fuzz.go:16		0xf61			4883c438		ADDQ $0x38, SP		
+  fuzz.go:16		0xf65			c3			RET			
+  fuzz.go:16		0xf66			e800000000		CALL 0xf6b		[1:5]R_CALL:runtime.deferreturn<1>	
+  fuzz.go:16		0xf6b			488b442408		MOVQ 0x8(SP), AX	
+  fuzz.go:16		0xf70			488b6c2430		MOVQ 0x30(SP), BP	
+  fuzz.go:16		0xf75			4883c438		ADDQ $0x38, SP		
+  fuzz.go:16		0xf79			c3			RET			
+  fuzz.go:13		0xf7a			e800000000		CALL 0xf7f		[1:5]R_CALL:runtime.morestack_noctxt	
+  fuzz.go:13		0xf7f			e954ffffff		JMP "".test2(SB)	
+
+TEXT "".test2.func1(SB) gofile../home/zhi/temp/code/go/example/fuzz/fuzz.go
+  fuzz.go:15		0xf84			488b4208		MOVQ 0x8(DX), AX	
+  fuzz.go:15		0xf88			48c70063000000		MOVQ $0x63, 0(AX)	
+  fuzz.go:15		0xf8f			c3			RET			
