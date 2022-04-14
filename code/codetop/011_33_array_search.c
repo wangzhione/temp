@@ -283,3 +283,48 @@ int search5(int * nums, int numsSize) {
 
     return nums[left];
 }
+
+int search6(int * nums, int numsSize) {
+    int left = 0;
+    int right = numsSize - 1;
+
+    while (left < right) {
+        if (left + 1 == right) {
+            return nums[left] < nums[right] ? nums[left] : nums[right];
+        }
+
+        int middlen = left + (right - left) / 2 ;
+        if (nums[left] == nums[middlen]) {
+            left++;
+            continue;
+        }
+
+        /*
+        nums[left] == nums[middlen] : 可以 left++
+        nums[left] > nums[middlen] : 意味着 最小值在 [left, middlen] 中
+        nums[left] < nums[middlen] : 最小值可能是 nums[left]也可能是 在 [middle+1, right] 中, 需要额外加步骤 
+         */
+        if (nums[left] > nums[middlen]) {
+            right = middlen;
+        } else {
+            if (nums[left] < nums[right]) {
+                break;
+            }
+            left = middlen+1;
+        }
+    }
+
+    return nums[left];
+}
+
+/*
+ left <= right or left < right
+
+ left + (right - left) / 2 
+
+ 存在 left <= left + (right - left) / 2 例如 right - left = 1 时候
+
+ 在 left < right 时候, 一定有 left + (right - left) / 2 < right
+
+ 因为 (right - left) / 2 < right - left 在 right - left > 0 情况.
+ */
