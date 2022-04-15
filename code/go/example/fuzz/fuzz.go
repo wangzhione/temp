@@ -1,7 +1,23 @@
 package main
 
-import "fmt"
-
 func main() {
-	fmt.Printf("Hello, 世界\n")
+	println(test1(), test2(), test3())
+}
+
+func test1() (a int) {
+	a = 9
+	defer func() { a = 99 }()
+	return a
+}
+
+func test2() int {
+	a := 9
+	defer func() { a = 99 }()
+	return a
+}
+
+func test3() int {
+	a := 9
+	defer func(pa *int) { *pa = 99 }(&a)
+	return a
 }

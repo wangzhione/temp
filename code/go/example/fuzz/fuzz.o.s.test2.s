@@ -1,0 +1,42 @@
+
+CMPQ 0x10(R14), SP	
+JBE 0xf7a		
+SUBQ $0x38, SP		
+MOVQ BP, 0x30(SP)	
+LEAQ 0x30(SP), BP	
+MOVQ $0x0, R13		
+MOVQ R13, 0x28(SP)	
+MOVB $0x0, 0x7(SP)	
+MOVQ $0x0, 0x8(SP)	
+MOVQ $0x9, 0x10(SP)	
+MOVUPS X15, 0x18(SP)	
+LEAQ 0(IP), AX		[3:7]R_PCREL:"".test2.func1	
+MOVQ AX, 0x18(SP)	
+LEAQ 0x10(SP), AX	
+MOVQ AX, 0x20(SP)	
+LEAQ 0x18(SP), AX	
+MOVQ AX, 0x28(SP)	
+MOVB $0x1, 0x7(SP)	
+MOVQ 0x10(SP), AX	
+MOVQ AX, 0x8(SP)	
+MOVB $0x0, 0x7(SP)	
+MOVQ 0x28(SP), DX	
+
+
+MOVQ 0x8(SP), AX	
+MOVQ 0x30(SP), BP	
+ADDQ $0x38, SP		
+
+
+CALL 0xf6b		[1:5]R_CALL:runtime.deferreturn<1>	
+MOVQ 0x8(SP), AX	
+MOVQ 0x30(SP), BP	
+ADDQ $0x38, SP		
+
+CALL 0xf7f		[1:5]R_CALL:runtime.morestack_noctxt	
+JMP "".test2(SB)	
+
+
+MOVQ 0x8(DX), AX	
+MOVQ $0x63, 0(AX)	
+
