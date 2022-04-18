@@ -46,7 +46,7 @@ int nums_compare(const void * left, const void * right) {
     return *(const int *)left - *(const int *)right;
 }
 
-void nextPermutation(int * nums, int numsSize) {
+void nextPermutation2(int * nums, int numsSize) {
     if (nums == NULL || numsSize <= 1) {
         return;
     }
@@ -82,6 +82,37 @@ void nextPermutation(int * nums, int numsSize) {
         temp = nums[i];
         nums[i] = nums[numsSize-1-i];
         nums[numsSize-1-i] = temp;
+    }
+}
+
+void nextPermutation(int * nums, int numsSize) { 
+    if (numsSize <= 1 || nums == NULL) {
+        return;
+    }
+
+    int temp;
+    int i = numsSize - 2;
+    while (i >= 0 && nums[i] >= nums[i+1]) {
+        i--;
+    }
+
+    if (i >= 0) {
+        int j = numsSize - 1;
+        while (j >= 0 && nums[i] >= nums[j]) {
+            j--;
+        }
+        temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+
+    // 漂亮
+    int left = i+1;
+    int right = numsSize - 1;
+    while (left < right) {
+        temp = nums[left];
+        nums[left++] = nums[right];
+        nums[right--] = temp;
     }
 }
 
@@ -123,3 +154,12 @@ int main(void) {
 
     exit(EXIT_SUCCESS);
 }
+
+/**
+ * base -- 指向要排序的数组的第一个元素的指针。
+ * nitems -- 由 base 指向的数组中元素的个数。
+ * size -- 数组中每个元素的大小，以字节为单位。
+ * compar -- 用来比较两个元素的函数。
+ * 
+ * void qsort(void *base, size_t nitems, size_t size, int (*compar)(const void *, const void*))
+ * /
