@@ -116,6 +116,35 @@ void nextPermutation(int * nums, int numsSize) {
     }
 }
 
+void nextPermutation2(int * nums, int numsSize) { 
+    if (numsSize <= 1 || nums == NULL) {
+        return;
+    }
+
+    int temp;
+    int i = numsSize - 2;
+    while (i >= 0 && nums[i] >= nums[i+1]) {
+        i--;
+    }
+
+    if (i >= 0) {
+        int j = numsSize - 1;
+        while (j >= 0 && nums[i] >= nums[j]) {
+            j--;
+        }
+        temp = nums[i];
+        nums[i] = nums[j];
+        nums[j] = temp;
+    }
+
+    // 漂亮
+    while (++i < --numsSize) {
+        temp = nums[i];
+        nums[i] = nums[numsSize];
+        nums[numsSize] = temp;
+    }
+}
+
 static void test_nextPermutation(int * nums, int numsSize) {
     int i = 0;
 
@@ -134,7 +163,7 @@ static void test_nextPermutation(int * nums, int numsSize) {
 }
 
 // build:
-// gcc -g -O3 -Wall -Wextra -Werror -o 012_31_next_permutation 012_31_next_permutation.c
+// gcc -g -O3 -Wall -Wextra -Werror -o 012_31_array_next_permutation 012_31_array_next_permutation.c
 //
 int main(void) {
     int nums1[] = { 1, 2, 3 };
