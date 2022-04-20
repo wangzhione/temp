@@ -29,7 +29,7 @@ void sort_heap(int a[], int len) {
     for (int parent = len/2; parent >= 0; parent--)
         sort_heap_adjust(a, parent, len);
 
-    // 开始交换大丁堆的顶端值, 构造有序数组
+    // 开始交换大顶堆的顶端值, 构造有序数组
     int n = len-1;
     do {
         int tmp = a[0];
