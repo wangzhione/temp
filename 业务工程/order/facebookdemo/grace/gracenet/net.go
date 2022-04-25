@@ -28,6 +28,8 @@ const (
 // it at startup.
 var originalWD, _ = os.Getwd()
 
+// Net provides the family of Listen functions and maintains the associated
+// state. Typically you will have only once instance of Net per application.
 type Net struct {
 	inherited   []net.Listener
 	active      []net.Listener
@@ -51,6 +53,7 @@ func (n *Net) inherit() error {
 		count, err := strconv.Atoi(countStr)
 		if err != nil {
 			retErr = fmt.Errorf("found invalid count value: %s=%s", envCountKey, countStr)
+			return
 		}
 
 		// In tests this may be overridden.
@@ -63,7 +66,7 @@ func (n *Net) inherit() error {
 
 		for i := fdStart; i < fdStart+count; i++ {
 			file := os.NewFile(uintptr(i), "listener")
-			l, err := net.FileListener(file)
+			ln, err := net.FileListener(file)
 			if err != nil {
 				file.Close()
 				retErr = fmt.Errorf("error inheriting socket fd %d: %s", i, err)
@@ -73,32 +76,32 @@ func (n *Net) inherit() error {
 				retErr = fmt.Errorf("error closing inherited socket fd %d: %s", i, err)
 				return
 			}
-			n.inherited = append(n.inherited, l)
+			n.inherited = append(n.inherited, ln)
 		}
 	})
 	return retErr
 }
 
-// Listen announces on the local network address laddr. The network net must be
+// Listen announces on the local network address. The network net must be
 // a stream-oriented network: "tcp", "tcp4", "tcp6", "unix" or "unixpacket". It
 // returns an inherited net.Listener for the matching network and address, or
 // creates a new one using net.Listen.
-func (n *Net) Listen(nett, laddr string) (net.Listener, error) {
-	switch nett {
+func (n *Net) Listen(network, address string) (net.Listener, error) {
+	switch network {
 	case "tcp", "tcp4", "tcp6":
-		addr, err := net.ResolveTCPAddr(nett, laddr)
+		laddr, err := net.ResolveTCPAddr(network, address)
 		if err != nil {
 			return nil, err
 		}
-		return n.ListenTCP(nett, addr)
+		return n.ListenTCP(network, laddr)
 	case "unix", "unixpacket", "invalid_unix_net_for_test":
-		addr, err := net.ResolveUnixAddr(nett, laddr)
+		laddr, err := net.ResolveUnixAddr(network, address)
 		if err != nil {
 			return nil, err
 		}
-		return n.ListenUnix(nett, addr)
+		return n.ListenUnix(network, laddr)
 	default:
-		return nil, net.UnknownNetworkError(nett)
+		return nil, net.UnknownNetworkError(network)
 	}
 }
 
@@ -114,24 +117,24 @@ func (n *Net) ListenTCP(nett string, laddr *net.TCPAddr) (*net.TCPListener, erro
 	defer n.mutex.Unlock()
 
 	// look for an inherited listener
-	for i, l := range n.inherited {
-		if l == nil { // we nil used inherited listeners
+	for i, ln := range n.inherited {
+		if ln == nil { // we nil used inherited listeners
 			continue
 		}
-		if isSameAddr(l.Addr(), laddr) {
+		if isSameAddr(ln.Addr(), laddr) {
 			n.inherited[i] = nil
-			n.active = append(n.active, l)
-			return l.(*net.TCPListener), nil
+			n.active = append(n.active, ln)
+			return ln.(*net.TCPListener), nil
 		}
 	}
 
 	// make a fresh listener
-	l, err := net.ListenTCP(nett, laddr)
+	ln, err := net.ListenTCP(nett, laddr)
 	if err != nil {
 		return nil, err
 	}
-	n.active = append(n.active, l)
-	return l, nil
+	n.active = append(n.active, ln)
+	return ln, nil
 }
 
 // ListenUnix announces on the local network address laddr. The network net
@@ -146,39 +149,41 @@ func (n *Net) ListenUnix(nett string, laddr *net.UnixAddr) (*net.UnixListener, e
 	defer n.mutex.Unlock()
 
 	// look for an inherited listener
-	for i, l := range n.inherited {
-		if l == nil { // we nil used inherited listeners
+	for i, ln := range n.inherited {
+		if ln == nil { // we nil used inherited listeners
 			continue
 		}
-		if isSameAddr(l.Addr(), laddr) {
+		if isSameAddr(ln.Addr(), laddr) {
 			n.inherited[i] = nil
-			n.active = append(n.active, l)
-			return l.(*net.UnixListener), nil
+			n.active = append(n.active, ln)
+			return ln.(*net.UnixListener), nil
 		}
 	}
 
 	// make a fresh listener
-	l, err := net.ListenUnix(nett, laddr)
+	ln, err := net.ListenUnix(nett, laddr)
 	if err != nil {
 		return nil, err
 	}
-	n.active = append(n.active, l)
-	return l, nil
+	n.active = append(n.active, ln)
+	return ln, nil
 }
 
 // activeListeners returns a snapshot copy of the active listeners.
 func (n *Net) activeListeners() ([]net.Listener, error) {
 	n.mutex.Lock()
 	defer n.mutex.Unlock()
-	ls := make([]net.Listener, len(n.active))
-	copy(ls, n.active)
-	return ls, nil
+
+	listeners := make([]net.Listener, len(n.active))
+	copy(listeners, n.active)
+	return listeners, nil
 }
 
 func isSameAddr(a1, a2 net.Addr) bool {
 	if a1.Network() != a2.Network() {
 		return false
 	}
+
 	a1s := a1.String()
 	a2s := a2.String()
 	if a1s == a2s {
@@ -213,8 +218,8 @@ func (n *Net) StartProcess() (int, error) {
 
 	// Extract the fds from the listeners.
 	files := make([]*os.File, len(listeners))
-	for i, l := range listeners {
-		files[i], err = l.(filer).File()
+	for i, ln := range listeners {
+		files[i], err = ln.(filer).File()
 		if err != nil {
 			return 0, err
 		}
