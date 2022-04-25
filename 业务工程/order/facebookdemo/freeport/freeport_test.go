@@ -27,6 +27,7 @@ func TestGetIsClosed(t *testing.T) {
 
 	listener, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(port))
 	if err != nil {
+
 		t.Fatalf("Got err from net.Listen: %+v", err)
 	}
 	defer listener.Close()
