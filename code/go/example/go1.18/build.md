@@ -64,4 +64,3 @@ $ go tool compile --help
 go tool compile 和 go build -gcflags -S 生成的是过程中的汇编，和最终的机器码的汇编可以通过go tool objdump生成。
 
 GOSSAFUNC=main GOOS=linux GOARCH=amd64 go tool compile main.go
-dumped SSA to ssa.html
