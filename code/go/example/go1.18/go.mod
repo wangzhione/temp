@@ -1,3 +1,3 @@
-module GO1.18
+module cache
 
-go 1.18
+go 1.22.5

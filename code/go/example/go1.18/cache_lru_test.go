@@ -5,13 +5,13 @@ import (
 	"testing"
 )
 
-func TestCacheLRU_Set(t *testing.T) {
+func TestCacheLRU_Put(t *testing.T) {
 	// 创建
 	c := NewCacheLRU(1)
 
 	// 设置
-	c.Set("123", "123")
-	c.Set("234", "234")
+	c.Put("123", "123")
+	c.Put("234", "234")
 
 	// 使用
 	value, ok := c.Get("123")
@@ -23,6 +23,6 @@ func TestCacheLRU_Set(t *testing.T) {
 	fmt.Println(c.Get("234"))
 
 	// 删除
-	c.Set("234", nil)
+	c.Delete("234")
 	fmt.Println(c.Get("234"))
 }

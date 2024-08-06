@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 )
 
@@ -12,7 +11,6 @@ func main() {
 	var ai, bi, ci int
 	var af, bf, cf float32
 
-	context.WithValue()
 	ai = 1
 	bi = 2
 	ci = min(ai, bi)

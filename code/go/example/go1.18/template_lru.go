@@ -12,8 +12,9 @@ type pair[K comparable, V any] struct {
 
 // TemplateLRU go 1.18 对 LRU cache 包装
 type TemplateLRU[K comparable, V any] struct {
-	m    sync.Mutex          // 因为 Get 触发热度更新操作, 所以只能走互斥
-	cap  int                 // capacity 容量 -1 (or < 0) 标识不限制
+	M sync.Mutex // 如果需要并发安全, 所有操作可以通过 M 加锁
+
+	cap  int                 // capacity 容量 <= 0 标识不限制
 	list *list.List          // entry container list
 	data map[K]*list.Element // 数据池子
 }
@@ -29,9 +30,6 @@ func NewTemplateLRU[K comparable, V any](cap int) *TemplateLRU[K, V] {
 
 // Get 获取 value, ok is true 标识存在
 func (c *TemplateLRU[K, V]) Get(key K) (value V, ok bool) {
-	c.m.Lock()
-	defer c.m.Unlock()
-
 	element, ok := c.data[key]
 	if ok {
 		value = element.Value.(*pair[K, V]).value
@@ -42,9 +40,6 @@ func (c *TemplateLRU[K, V]) Get(key K) (value V, ok bool) {
 
 // Delete 通过 key 删除操作
 func (c *TemplateLRU[K, V]) Delete(key K) {
-	c.m.Lock()
-	defer c.m.Unlock()
-
 	element, ok := c.data[key]
 	if ok {
 		delete(c.data, key)
@@ -54,9 +49,6 @@ func (c *TemplateLRU[K, V]) Delete(key K) {
 
 // Put 添加数据
 func (c *TemplateLRU[K, V]) Put(key K, value V) {
-	c.m.Lock()
-	defer c.m.Unlock()
-
 	element, ok := c.data[key]
 	if ok {
 		element.Value.(*pair[K, V]).value = value
@@ -65,7 +57,7 @@ func (c *TemplateLRU[K, V]) Put(key K, value V) {
 	}
 
 	// 容量不足, 尝试清理数据
-	if c.list.Len() >= c.cap {
+	if c.cap > 0 && c.cap <= c.list.Len() {
 		delete(c.data, c.list.Remove(c.list.Back()).(*pair[K, V]).key)
 	}
 
