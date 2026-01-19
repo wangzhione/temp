@@ -1,0 +1,41 @@
+{
+    // 使用 IntelliSense 了解相关属性
+    // 悬停以查看现有属性的描述
+    // 有关详细信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            // 配置名称，显示在调试下拉菜单中
+            "name": "Launch Go Program",
+            // 调试器类型，Go 语言使用 "go"
+            "type": "go",
+            // 请求类型，"launch" 表示启动程序进行调试
+            "request": "launch",
+            // 程序入口文件路径（相对于工作区根目录）
+            // "program": "${workspaceFolder}",
+            "program": "E:\\Study\\hello\\hello.go",
+            // 程序的工作目录
+            "cwd": "${workspaceFolder}",
+            // 是否显示调试适配器的日志输出（设置为 true 以查看详细日志）
+            "showLog": true,
+            // 日志输出配置，指定要输出的日志类型
+            // "rpc" - 显示 RPC 通信日志
+            // "debugger" - 显示调试器日志
+            // "gdbwire" - 显示 GDB 协议日志
+            "logOutput": "dap",
+            // 传递给程序的命令行参数（如果需要）
+            "args": [],
+            // 环境变量（如果需要）
+            "env": {},
+            // 是否在控制台显示输出
+            "console": "integratedTerminal",
+
+            "substitutePath": [
+            {
+                "from": "e:\\Study\\hello",
+                "to": "E:\\Study\\hello"
+            }
+            ]            
+        }
+    ]
+}

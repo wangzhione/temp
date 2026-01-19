@@ -22,7 +22,7 @@ core
 *.suo
 *.swp
 *.swo
-*.exe
+# *.exe
 *.out
 *.pdb
 *.pch
@@ -47,7 +47,7 @@ core*
 *.log
 
 # VSCode settings
-.vscode
+# .vscode
 
 # IDEA files
 .idea
