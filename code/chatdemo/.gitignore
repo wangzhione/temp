@@ -1,0 +1,40 @@
+# CMake 构建目录与缓存
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# 本地编译产物
+*.exe
+*.obj
+*.o
+*.ilk
+*.pdb
+*.out
+
+build/
+build_wsl/
+build_windows/
+build_macos/
+build_linux/
+build_debug/
+build_release/
+build_make/
+build_make/
+build_make_check/
+build_win/
+build_wsl_test/
+
+# 本地编辑器目录
+.vscode/
+
+# 临时文件
+*.log
+*.tmp
+*.bak
+*.swp
+
+
+
+chat_client
+chat_server
