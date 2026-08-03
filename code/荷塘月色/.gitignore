@@ -1,0 +1,191 @@
+# ==================================================
+# C / C++ 编译产物
+# ==================================================
+
+# Object files
+*.o
+*.obj
+*.lo
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Static libraries
+*.a
+*.lib
+*.la
+
+# Shared libraries
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Executable files
+*.exe
+*.out
+*.app
+*.com
+
+# Debug information
+*.pdb
+*.ilk
+*.dSYM/
+*.debug
+
+# Windows resource compiler output
+*.res
+
+# Dependency files
+*.d
+*.dep
+
+
+# ==================================================
+# 构建目录
+# ==================================================
+
+build/
+Build/
+bin/
+obj/
+out/
+dist/
+debug/
+Debug/
+release/
+Release/
+x64/
+x86/
+
+
+# ==================================================
+# CMake
+# ==================================================
+
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile.cmake
+compile_commands.json
+_install_manifest.txt
+
+# CMake 用户预设
+CMakeUserPresets.json
+
+
+# ==================================================
+# Meson / Ninja
+# ==================================================
+
+meson-private/
+meson-logs/
+meson-info/
+.ninja_deps
+.ninja_log
+build.ninja
+
+
+# ==================================================
+# Visual Studio
+# ==================================================
+
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.ipch
+ipch/
+
+
+# ==================================================
+# Visual Studio Code
+# ==================================================
+
+.vscode/
+
+# 若希望共享 VS Code 编译和调试配置，可以改成：
+# .vscode/*
+# !.vscode/settings.json
+# !.vscode/tasks.json
+# !.vscode/launch.json
+# !.vscode/extensions.json
+
+
+# ==================================================
+# Code::Blocks
+# ==================================================
+
+*.depend
+*.layout
+
+
+# ==================================================
+# CLion / JetBrains
+# ==================================================
+
+.idea/
+cmake-build-*/
+
+
+# ==================================================
+# 操作系统临时文件
+# ==================================================
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+
+# ==================================================
+# 编辑器临时文件
+# ==================================================
+
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+
+
+# ==================================================
+# 程序运行时生成文件
+# ==================================================
+
+*.log
+*.pid
+*.stackdump
+core
+core.*
+vgcore.*
+
+
+# ==================================================
+# 测试覆盖率文件
+# ==================================================
+
+*.gcda
+*.gcno
+*.gcov
+coverage/

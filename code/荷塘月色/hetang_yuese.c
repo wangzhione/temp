@@ -368,6 +368,18 @@ static void draw_scene(HDC hdc, int width, int height) {
     draw_stem(hdc, (int)(width * 0.78), height,
               (int)(width * 0.76) + sway3, (int)(height * 0.64), 4);
 
+    // 荷叶的叶柄：先画叶柄，再画荷叶，让连接处被荷叶自然遮住
+    draw_stem(hdc, (int)(width * 0.17), height,
+              (int)(width * 0.19), (int)(height * 0.73), 3);
+    draw_stem(hdc, (int)(width * 0.36), height,
+              (int)(width * 0.38), (int)(height * 0.82), 3);
+    draw_stem(hdc, (int)(width * 0.59), height,
+              (int)(width * 0.61), (int)(height * 0.75), 3);
+    draw_stem(hdc, (int)(width * 0.85), height,
+              (int)(width * 0.83), (int)(height * 0.84), 3);
+    draw_stem(hdc, (int)(width * 0.47), height,
+              (int)(width * 0.49), (int)(height * 0.92), 3);
+
     draw_leaf(hdc, (int)(width * 0.19), (int)(height * 0.73),
               width / 11, height / 28, -0.18);
     draw_leaf(hdc, (int)(width * 0.38), (int)(height * 0.82),
