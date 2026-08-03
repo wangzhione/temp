@@ -261,13 +261,15 @@ static void draw_leaf(HDC hdc, int cx, int cy, int rx, int ry, double angle) {
     HPEN vein_pen = CreatePen(PS_SOLID, 1, RGB(79, 139, 90));
     SelectObject(hdc, vein_pen);
 
-    POINT edge = rotate_point(rx * 0.78, 0, angle, cx, cy);
-    MoveToEx(hdc, cx, cy, NULL);
-    LineTo(hdc, edge.x, edge.y);
+    // 在荷叶自身的椭圆坐标系中计算叶脉终点，
+    // 再统一使用荷叶的 angle 旋转，保证叶脉不会穿出荷叶。
+    for (int i = 0; i < 14; ++i) {
+        double vein_angle = 2.0 * PI * i / 14.0;
+        double length = 0.78 + 0.06 * sin(i * 1.7);
+        double x = rx * length * cos(vein_angle);
+        double y = ry * length * sin(vein_angle);
+        POINT p = rotate_point(x, y, angle, cx, cy);
 
-    for (int i = -2; i <= 2; ++i) {
-        double a = angle + i * 0.30;
-        POINT p = rotate_point(rx * 0.62, i * ry * 0.18, a, cx, cy);
         MoveToEx(hdc, cx, cy, NULL);
         LineTo(hdc, p.x, p.y);
     }
