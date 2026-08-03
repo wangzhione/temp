@@ -76,13 +76,13 @@ static unsigned char * g_music_wav = NULL;
 
 
 // 把 16 位整数按 WAV 需要的小端字节顺序写入内存
-static void write_u16_le(unsigned char *dst, uint16_t value) {
+static void write_u16_le(unsigned char * dst, uint16_t value) {
     dst[0] = (unsigned char)(value & 0xffu);
     dst[1] = (unsigned char)((value >> 8) & 0xffu);
 }
 
 // 把 32 位整数按 WAV 需要的小端字节顺序写入内存
-static void write_u32_le(unsigned char *dst, uint32_t value) {
+static void write_u32_le(unsigned char * dst, uint32_t value) {
     dst[0] = (unsigned char)(value & 0xffu);
     dst[1] = (unsigned char)((value >> 8) & 0xffu);
     dst[2] = (unsigned char)((value >> 16) & 0xffu);
@@ -410,7 +410,34 @@ static void draw_lotus(HDC hdc, int cx, int cy, double scale) {
                  RGB(239, 192, 66), RGB(214, 157, 38), 1);
 }
 
-// 使用 36 个 POINT 点近似椭圆形荷叶，并绘制叶脉
+// 绘制荷叶杆。杆的末端连接到荷叶叶脉的放射中心，并绘制在荷叶后面。
+static void draw_leaf_stem(HDC hdc, int base_x, int base_y,
+                           int cx, int cy, int rx, double angle, int width) {
+    // 荷叶的叶柄通常连接在叶片中央附近，而不是连接到椭圆外沿。
+    POINT attach = rotate_point(-rx * 0.08, 0.0, angle, cx, cy);
+
+    // 使用一段三次贝塞尔曲线，让荷叶杆比直线更自然。
+    POINT curve[4];
+    int dx = attach.x - base_x;
+    int dy = attach.y - base_y;
+
+    curve[0].x = base_x;
+    curve[0].y = base_y;
+    curve[1].x = base_x + dx / 5;
+    curve[1].y = base_y + dy / 3;
+    curve[2].x = attach.x - dx / 8;
+    curve[2].y = attach.y - dy / 4;
+    curve[3] = attach;
+
+    HPEN pen = CreatePen(PS_SOLID, width, RGB(40, 101, 64));
+    HGDIOBJ old_pen = SelectObject(hdc, pen);
+    PolyBezier(hdc, curve, 4);
+
+    SelectObject(hdc, old_pen);
+    DeleteObject(pen);
+}
+
+// 使用 36 个 POINT 点近似椭圆形荷叶，并从叶柄连接点向四周绘制叶脉
 static void draw_leaf(HDC hdc, int cx, int cy, int rx, int ry, double angle) {
     // points 保存荷叶轮廓上的 36 个点
     POINT points[36];
@@ -428,19 +455,33 @@ static void draw_leaf(HDC hdc, int cx, int cy, int rx, int ry, double angle) {
     HGDIOBJ old_pen = SelectObject(hdc, pen);
     Polygon(hdc, points, 36);
 
-    HPEN vein_pen = CreatePen(PS_SOLID, 1, RGB(79, 139, 90));
+    // 叶脉与荷叶杆使用同一个连接点，因此看起来会真正连在一起。
+    POINT vein_origin = rotate_point(-rx * 0.08, 0.0, angle, cx, cy);
+    HPEN vein_pen = CreatePen(PS_SOLID, 1, RGB(91, 153, 96));
     SelectObject(hdc, vein_pen);
 
-    POINT edge = rotate_point(rx * 0.78, 0, angle, cx, cy);
-    MoveToEx(hdc, cx, cy, NULL);
-    LineTo(hdc, edge.x, edge.y);
+    // 从连接点向荷叶边缘放射 12 条主叶脉。
+    // 端点按椭圆的 rx、ry 分别计算，再整体旋转，避免旧代码出现箭头状歪斜。
+    for (int i = 0; i < 12; ++i) {
+        double a = 2.0 * PI * i / 12.0;
+        double x = rx * 0.82 * cos(a);
+        double y = ry * 0.82 * sin(a);
+        POINT edge = rotate_point(x, y, angle, cx, cy);
 
-    for (int i = -2; i <= 2; ++i) {
-        double a = angle + i * 0.30;
-        POINT p = rotate_point(rx * 0.62, i * ry * 0.18, a, cx, cy);
-        MoveToEx(hdc, cx, cy, NULL);
-        LineTo(hdc, p.x, p.y);
+        MoveToEx(hdc, vein_origin.x, vein_origin.y, NULL);
+        LineTo(hdc, edge.x, edge.y);
     }
+
+    // 在叶柄连接点画一个小圆点，让叶脉放射中心更清晰。
+    HBRUSH center_brush = CreateSolidBrush(RGB(91, 153, 96));
+    HGDIOBJ old_center_brush = SelectObject(hdc, center_brush);
+    HGDIOBJ old_center_pen = SelectObject(hdc, GetStockObject(NULL_PEN));
+    Ellipse(hdc,
+            vein_origin.x - 2, vein_origin.y - 2,
+            vein_origin.x + 3, vein_origin.y + 3);
+    SelectObject(hdc, old_center_pen);
+    SelectObject(hdc, old_center_brush);
+    DeleteObject(center_brush);
 
     SelectObject(hdc, old_pen);
     SelectObject(hdc, old_brush);
@@ -535,6 +576,23 @@ static void draw_scene(HDC hdc, int width, int height) {
               (int)(width * 0.53) + sway2, (int)(height * 0.67), 4);
     draw_stem(hdc, (int)(width * 0.78), height,
               (int)(width * 0.76) + sway3, (int)(height * 0.64), 4);
+
+    // 荷叶杆必须先画，随后荷叶覆盖杆的末端，视觉上才像从叶片下方长出。
+    draw_leaf_stem(hdc, (int)(width * 0.18), height - 18,
+                   (int)(width * 0.19), (int)(height * 0.73),
+                   width / 11, -0.18, 3);
+    draw_leaf_stem(hdc, (int)(width * 0.37), height - 18,
+                   (int)(width * 0.38), (int)(height * 0.82),
+                   width / 10, 0.20, 3);
+    draw_leaf_stem(hdc, (int)(width * 0.60), height - 18,
+                   (int)(width * 0.61), (int)(height * 0.75),
+                   width / 9, -0.12, 3);
+    draw_leaf_stem(hdc, (int)(width * 0.82), height - 18,
+                   (int)(width * 0.83), (int)(height * 0.84),
+                   width / 10, 0.18, 3);
+    draw_leaf_stem(hdc, (int)(width * 0.49), height - 18,
+                   (int)(width * 0.49), (int)(height * 0.92),
+                   width / 8, 0.02, 3);
 
     draw_leaf(hdc, (int)(width * 0.19), (int)(height * 0.73),
               width / 11, height / 28, -0.18);
