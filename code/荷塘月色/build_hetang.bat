@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-gcc hetang_yuese.c -std=c11 -O2 -Wall -Wextra -mwindows -lgdi32 -o hetang_yuese.exe
+gcc hetang_yuese.c -std=c11 -O2 -Wall -Wextra -mwindows -lgdi32 -lwinmm -o hetang_yuese.exe
 
 if errorlevel 1 (
     echo.

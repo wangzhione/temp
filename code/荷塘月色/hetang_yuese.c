@@ -5,9 +5,13 @@
 // WIN32_LEAN_AND_MEAN 约定 windows.h 中部分不常用的 Windows API 不导入
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <mmsystem.h>
 
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
 
 // PI 表示圆周率，用于角度、旋转和正弦动画计算
 #define PI 3.14159265358979323846
@@ -18,18 +22,184 @@
 // g_frame 动画帧计数器；每次定时器触发时加 1，达到最大值后自动回到 0
 static unsigned int g_frame = 0;
 
-// Star 保存一颗星星的位置、大小和闪烁相位
-// x、y 使用固定基准坐标，窗口缩放时再换算成实际坐标
-// r 表示星星半径，phase 表示闪烁动画的初始相位
+// star 保存一颗星星的位置、大小和闪烁相位
 typedef struct {
-    int x;
-    int y;
-    int r;
-    int phase;
-} Star;
+    int x, y;  // x、y 使用固定基准坐标，窗口缩放时再换算成实际坐标
+    int r;     // r 表示星星半径
+    int phase; // phase 表示闪烁动画的初始相位
+} star;
 
 // g_stars 保存 90 颗星星各自的位置、大小和闪烁相位
-static Star g_stars[90];
+static star g_stars[90];
+
+// music_step 表示旋律中的一个播放步骤。
+// 每个步骤可以同时播放一个主音和两个和声音，形成简单的三音和弦。
+// melody、harmony1、harmony2 保存声音频率，单位都是赫兹 Hz。
+// beats 保存这个步骤持续的拍数，实际持续时间会根据音乐速度 BPM 计算。
+typedef struct {
+    // melody 表示当前步骤的主旋律频率，单位是赫兹 Hz。
+    // 例如：
+    // 261.63 Hz 表示中央 C，也就是 C4；
+    // 440.00 Hz 表示标准音 A4。
+    // 生成 WAV 数据时，主旋律通常使用相对明显的音量。
+    // 如果值为 0，则表示当前步骤不播放主旋律。
+    double melody;
+
+    // harmony1 表示第一层和声的频率，单位是赫兹 Hz。
+    // 它会与 melody 主旋律同时播放，用于丰富声音层次。
+    // 通常选择与主旋律协调的音，例如三度音或五度音。
+    // 如果值为 0，则表示当前步骤不播放第一层和声。
+    double harmony1;
+
+    // harmony2 表示第二层和声的频率，单位是赫兹 Hz。
+    // 它会与 melody 和 harmony1 同时叠加，组成简单的三音和弦。
+    // 第二层和声的音量一般应更低，避免盖过主旋律。
+    // 如果值为 0，则表示当前步骤不播放第二层和声。
+    double harmony2;
+
+    // beats 表示当前步骤持续多少拍。
+    // 它不是秒数，必须结合音乐速度 BPM 换算成实际持续时间。
+    //
+    // 例如音乐速度为 70 BPM：
+    // 1 拍持续时间 = 60 / 70 秒；
+    // 2 拍持续时间 = 2 * 60 / 70 秒；
+    // 0.5 拍持续时间 = 0.5 * 60 / 70 秒。
+    //
+    // 使用 double 类型可以表示 0.5 拍、1.5 拍等非整数节拍。
+    double beats;
+} music_step;
+
+// g_music_wav 保存程序运行期间使用的完整 WAV 数据。
+// 音乐由 PlaySoundW 直接从这块内存循环播放，不会写入临时文件。
+// 因为使用了异步播放，所以必须一直保留到程序退出、停止播放以后才能释放。
+static unsigned char * g_music_wav = NULL;
+
+
+// 把 16 位整数按 WAV 需要的小端字节顺序写入内存
+static void write_u16_le(unsigned char *dst, uint16_t value) {
+    dst[0] = (unsigned char)(value & 0xffu);
+    dst[1] = (unsigned char)((value >> 8) & 0xffu);
+}
+
+// 把 32 位整数按 WAV 需要的小端字节顺序写入内存
+static void write_u32_le(unsigned char *dst, uint32_t value) {
+    dst[0] = (unsigned char)(value & 0xffu);
+    dst[1] = (unsigned char)((value >> 8) & 0xffu);
+    dst[2] = (unsigned char)((value >> 16) & 0xffu);
+    dst[3] = (unsigned char)((value >> 24) & 0xffu);
+}
+
+// 根据旋律表在堆内存中合成一段低音量 WAV 音乐
+static BOOL create_music_data(void) {
+    const int sample_rate = 22050;
+    const int bits_per_sample = 16;
+    const int channels = 1;
+    const double bpm = 70.0;
+
+    // melody 保存整段舒缓旋律；较低频率的两个音组成背景和声
+    static const music_step melody[] = {
+        { 523.25, 261.63, 196.00, 2.0 },
+        { 659.25, 261.63, 196.00, 2.0 },
+        { 783.99, 261.63, 196.00, 2.0 },
+        { 659.25, 261.63, 196.00, 2.0 },
+        { 587.33, 293.66, 220.00, 2.0 },
+        { 698.46, 293.66, 220.00, 2.0 },
+        { 880.00, 293.66, 220.00, 2.0 },
+        { 698.46, 293.66, 220.00, 2.0 },
+        { 659.25, 261.63, 196.00, 2.0 },
+        { 783.99, 261.63, 196.00, 2.0 },
+        {1046.50, 261.63, 196.00, 2.0 },
+        { 783.99, 261.63, 196.00, 2.0 },
+        { 587.33, 196.00, 146.83, 2.0 },
+        { 698.46, 196.00, 146.83, 2.0 },
+        { 659.25, 261.63, 196.00, 2.0 },
+        { 523.25, 261.63, 196.00, 2.0 }
+    };
+
+    size_t step_count = sizeof(melody) / sizeof(melody[0]);
+    size_t total_samples = 0;
+
+    for (size_t i = 0; i < step_count; ++i) {
+        double seconds = melody[i].beats * 60.0 / bpm;
+        total_samples += (size_t)(seconds * sample_rate);
+    }
+
+    size_t data_bytes = total_samples * channels * (bits_per_sample / 8);
+    size_t wav_size = 44 + data_bytes;
+
+    // WAV 文件小于 2 MB，DWORD 足以保存文件长度
+    if (wav_size > 0xffffffffu) return FALSE;
+
+    unsigned char *wav = (unsigned char *)malloc(wav_size);
+    if (!wav) return FALSE;
+
+    // 写入标准 PCM WAV 文件头
+    memcpy(wav + 0, "RIFF", 4);
+    write_u32_le(wav + 4, (uint32_t)(36 + data_bytes));
+    memcpy(wav + 8, "WAVE", 4);
+    memcpy(wav + 12, "fmt ", 4);
+    write_u32_le(wav + 16, 16);
+    write_u16_le(wav + 20, 1);
+    write_u16_le(wav + 22, (uint16_t)channels);
+    write_u32_le(wav + 24, (uint32_t)sample_rate);
+    write_u32_le(wav + 28, (uint32_t)(sample_rate * channels * bits_per_sample / 8));
+    write_u16_le(wav + 32, (uint16_t)(channels * bits_per_sample / 8));
+    write_u16_le(wav + 34, (uint16_t)bits_per_sample);
+    memcpy(wav + 36, "data", 4);
+    write_u32_le(wav + 40, (uint32_t)data_bytes);
+
+    size_t write_offset = 44;
+
+    for (size_t step = 0; step < step_count; ++step) {
+        double seconds = melody[step].beats * 60.0 / bpm;
+        size_t step_samples = (size_t)(seconds * sample_rate);
+
+        for (size_t i = 0; i < step_samples; ++i) {
+            double t = (double)i / sample_rate;
+            double remaining = seconds - t;
+            double envelope = 1.0;
+
+            // 每个音缓慢淡入淡出，减少音与音衔接时的爆音
+            if (t < 0.10) envelope *= t / 0.10;
+            if (remaining < 0.30) envelope *= remaining / 0.30;
+            if (envelope < 0.0) envelope = 0.0;
+
+            double tremolo = 0.94 + 0.06 * sin(2.0 * PI * 0.35 * t);
+            double value =
+                0.50 * sin(2.0 * PI * melody[step].melody * t) +
+                0.18 * sin(2.0 * PI * melody[step].harmony1 * t) +
+                0.14 * sin(2.0 * PI * melody[step].harmony2 * t) +
+                0.08 * sin(2.0 * PI * melody[step].harmony1 * 0.5 * t);
+
+            int16_t sample = (int16_t)(value * envelope * tremolo * 7000.0);
+            write_u16_le(wav + write_offset, (uint16_t)sample);
+            write_offset += 2;
+        }
+    }
+
+    // 保存 WAV 内存地址；异步播放期间不能释放这块内存
+    g_music_wav = wav;
+    return TRUE;
+}
+
+// 异步循环播放内存中的背景音乐，不阻塞窗口动画和消息循环
+static BOOL start_music(void) {
+    if (!g_music_wav && !create_music_data()) return FALSE;
+
+    return PlaySoundW(
+        (LPCWSTR)g_music_wav,
+        NULL,
+        SND_MEMORY | SND_ASYNC | SND_LOOP | SND_NODEFAULT
+    );
+}
+
+// 程序退出时先停止播放，再释放保存 WAV 数据的堆内存
+static void cleanup_music(void) {
+    PlaySoundW(NULL, NULL, 0);
+
+    free(g_music_wav);
+    g_music_wav = NULL;
+}
 
 // 把整数 v 限制在 [lo, hi] 范围内
 static int clamp_int(int v, int lo, int hi) {
@@ -261,15 +431,13 @@ static void draw_leaf(HDC hdc, int cx, int cy, int rx, int ry, double angle) {
     HPEN vein_pen = CreatePen(PS_SOLID, 1, RGB(79, 139, 90));
     SelectObject(hdc, vein_pen);
 
-    // 在荷叶自身的椭圆坐标系中计算叶脉终点，
-    // 再统一使用荷叶的 angle 旋转，保证叶脉不会穿出荷叶。
-    for (int i = 0; i < 14; ++i) {
-        double vein_angle = 2.0 * PI * i / 14.0;
-        double length = 0.78 + 0.06 * sin(i * 1.7);
-        double x = rx * length * cos(vein_angle);
-        double y = ry * length * sin(vein_angle);
-        POINT p = rotate_point(x, y, angle, cx, cy);
+    POINT edge = rotate_point(rx * 0.78, 0, angle, cx, cy);
+    MoveToEx(hdc, cx, cy, NULL);
+    LineTo(hdc, edge.x, edge.y);
 
+    for (int i = -2; i <= 2; ++i) {
+        double a = angle + i * 0.30;
+        POINT p = rotate_point(rx * 0.62, i * ry * 0.18, a, cx, cy);
         MoveToEx(hdc, cx, cy, NULL);
         LineTo(hdc, p.x, p.y);
     }
@@ -368,18 +536,6 @@ static void draw_scene(HDC hdc, int width, int height) {
     draw_stem(hdc, (int)(width * 0.78), height,
               (int)(width * 0.76) + sway3, (int)(height * 0.64), 4);
 
-    // 荷叶的叶柄：先画叶柄，再画荷叶，让连接处被荷叶自然遮住
-    draw_stem(hdc, (int)(width * 0.17), height,
-              (int)(width * 0.19), (int)(height * 0.73), 3);
-    draw_stem(hdc, (int)(width * 0.36), height,
-              (int)(width * 0.38), (int)(height * 0.82), 3);
-    draw_stem(hdc, (int)(width * 0.59), height,
-              (int)(width * 0.61), (int)(height * 0.75), 3);
-    draw_stem(hdc, (int)(width * 0.85), height,
-              (int)(width * 0.83), (int)(height * 0.84), 3);
-    draw_stem(hdc, (int)(width * 0.47), height,
-              (int)(width * 0.49), (int)(height * 0.92), 3);
-
     draw_leaf(hdc, (int)(width * 0.19), (int)(height * 0.73),
               width / 11, height / 28, -0.18);
     draw_leaf(hdc, (int)(width * 0.38), (int)(height * 0.82),
@@ -405,6 +561,9 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg,
         case WM_CREATE:
             // 每 33 毫秒触发一次 WM_TIMER，刷新率大约为 30 FPS
             SetTimer(hwnd, TIMER_ID, 33, NULL);
+
+            // 窗口创建后开始循环播放舒缓背景音乐
+            start_music();
             return 0;
 
         case WM_TIMER:
@@ -460,8 +619,9 @@ static LRESULT CALLBACK window_proc(HWND hwnd, UINT msg,
         }
 
         case WM_DESTROY:
-            // 窗口销毁时停止定时器，并结束消息循环
+            // 窗口销毁时停止动画和音乐、释放 WAV 内存，再结束消息循环
             KillTimer(hwnd, TIMER_ID);
+            cleanup_music();
             PostQuitMessage(0);
             return 0;
     }
